@@ -1,7 +1,9 @@
 name: Make spicystaging-temp
 on:
-  schedule:
-    - cron: '*/30 * * * *' # Runs every 30 minutes
+  workflow_run:
+    workflows: ["Sync Fork"]
+    types: 
+      - completed
   workflow_dispatch:
 jobs:
   copy_branch:
