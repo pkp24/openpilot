@@ -1,0 +1,77 @@
+name: Sync Fork
+on:
+  #schedule:
+  #  - cron: '*/30 * * * *' # Runs every 30 minutes
+  workflow_dispatch:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # Fetch all history for all tags and branches
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+    - name: Sync branches
+      run: |
+        git remote add upstream https://github.com/FrogAi/FrogPilot
+        git fetch upstream
+        echo "===== FrogPilot Commit Check ====="
+        # Get the latest commit hash from upstream FrogPilot
+        UPSTREAM_COMMIT=$(git rev-parse upstream/FrogPilot)
+        echo "Upstream FrogPilot Commit: $UPSTREAM_COMMIT"
+        # Get the commit hash of the last sync
+        LAST_SYNC_COMMIT=$(git rev-parse origin/FrogPilot)
+        echo "Last Sync Commit: $LAST_SYNC_COMMIT"
+        # Compare the commits
+        if [ "$UPSTREAM_COMMIT" != "$LAST_SYNC_COMMIT" ]; then
+          echo "FrogPilot branch has updates from the upstream. Syncing..."
+          git checkout FrogPilot
+          # Create a temporary branch to store the original state
+          git branch temp-branch
+          # Reset the FrogPilot branch to match the upstream
+          git reset --hard upstream/FrogPilot
+          # Check if the .github/workflows directory exists in the original state
+          if git ls-tree -d temp-branch:.github/workflows >/dev/null 2>&1; then
+            # If it exists, restore the .github/workflows directory from the original state
+            git checkout temp-branch -- .github/workflows
+            # Stage and commit the workflow files
+            git add .github/workflows
+            git commit -m "Restore workflow files" || true
+          else
+            echo ".github/workflows does not exist, nothing to restore."
+          fi
+          # Delete the temporary branch
+          git branch -D temp-branch
+          git push origin FrogPilot --force
+        else
+          echo "FrogPilot branch is up to date with the last sync."
+        fi
+        # Sync other branches
+        for branch in FrogPilot-Testing FrogPilot-Staging; do
+          echo "===== $branch Commit Check ====="
+          # Check if the branch exists in the upstream
+          if git ls-remote --exit-code --heads upstream $branch >/dev/null 2>&1; then
+            # Get the latest commit hash from upstream branch
+            UPSTREAM_COMMIT=$(git rev-parse upstream/$branch)
+            echo "Upstream $branch Commit: $UPSTREAM_COMMIT"
+            # Get the latest commit hash from your branch
+            YOUR_COMMIT=$(git rev-parse origin/$branch)
+            echo "Your $branch Commit: $YOUR_COMMIT"
+            # Compare the commits
+            if [ "$UPSTREAM_COMMIT" != "$YOUR_COMMIT" ]; then
+              echo "$branch branch is not up to date with the upstream. Syncing..."
+              # Checkout or create the branch from upstream
+              git checkout -B $branch upstream/$branch
+              # Force-push to update the origin branch
+              git push origin $branch --force
+            else
+              echo "$branch branch is up to date with the upstream."
+            fi
+          else
+            echo "$branch branch does not exist in the upstream."
+          fi
+        done
