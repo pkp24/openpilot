@@ -27,7 +27,8 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           "https://api.github.com/repos/FrogAi/FrogPilot/branches/FrogPilot-Staging")
           echo "Upstream Commit JSON for FrogPilot-Staging: $UPSTREAM_COMMIT_STAGING_JSON"
-          UPSTREAM_COMMIT_STAGING=$(echo $UPSTREAM_COMMIT_STAGING_JSON | jq -r '.commit.sha')
+          UPSTREAM_COMMIT=$(echo $UPSTREAM_COMMIT_STAGING_JSON | jq -r '.commit.sha')
+          echo "UPSTREAM_COMMIT_STAGING=$UPSTREAM_COMMIT" >> $GITHUB_ENV
 
       
       - name: Find most recent upstream commit for FrogPilot-Testing
@@ -39,7 +40,8 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           "https://api.github.com/repos/FrogAi/FrogPilot/branches/FrogPilot-Testing")
           echo "Upstream Commit JSON for FrogPilot-Testing: $UPSTREAM_COMMIT_TESTING_JSON"
-          UPSTREAM_COMMIT_TESTING=$(echo $UPSTREAM_COMMIT_TESTING_JSON | jq -r '.commit.sha')
+          UPSTREAM_COMMIT=$(echo $UPSTREAM_COMMIT_TESTING_JSON | jq -r '.commit.sha')
+          echo "UPSTREAM_COMMIT_TESTING=$UPSTREAM_COMMIT" >> $GITHUB_ENV
 
 
       - name: Find your most recent commit for FrogPilot (excluding your commits and actions bot)
@@ -52,7 +54,7 @@ jobs:
           "https://api.github.com/repos/pkp24/FrogPilot/commits?per_page=100")
           echo "Your Commit JSON for FrogPilot: $YOUR_COMMIT_JSON"
           YOUR_COMMIT=$(echo $YOUR_COMMIT_JSON | jq '[.[] | select(.author.login != "actions-user" and .author.login != "pkp24")][0].sha' -r)
-
+          echo "YOUR_COMMIT_FROGPILOT=$YOUR_COMMIT" >> $GITHUB_ENV
 
       - name: Find your most recent commit for FrogPilot-Staging (excluding your commits and actions bot)
         id: your_commit_staging
@@ -63,7 +65,8 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           "https://api.github.com/repos/pkp24/FrogPilot/branches/FrogPilot-Staging")
           echo "Your Commit JSON for FrogPilot-Staging: $YOUR_COMMIT_STAGING_JSON"
-          YOUR_COMMIT_STAGING=$(echo $YOUR_COMMIT_STAGING_JSON | jq -r '.commit.sha')
+          YOUR_COMMIT=$(echo $YOUR_COMMIT_STAGING_JSON | jq -r '.commit.sha')
+          echo "YOUR_COMMIT_STAGING=$YOUR_COMMIT" >> $GITHUB_ENV
 
       
       - name: Find your most recent commit for FrogPilot-Testing (excluding your commits and actions bot)
@@ -75,7 +78,8 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           "https://api.github.com/repos/pkp24/FrogPilot/branches/FrogPilot-Testing")
           echo "Your Commit JSON for FrogPilot-Testing: $YOUR_COMMIT_TESTING_JSON"
-          YOUR_COMMIT_TESTING=$(echo $YOUR_COMMIT_TESTING_JSON | jq -r '.commit.sha')
+          YOUR_COMMIT=$(echo $YOUR_COMMIT_TESTING_JSON | jq -r '.commit.sha')
+          echo "YOUR_COMMIT_TESTING=$YOUR_COMMIT" >> $GITHUB_ENV
 
 
       - name: Display commit information
