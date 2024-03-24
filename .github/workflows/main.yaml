@@ -100,13 +100,13 @@ jobs:
           # Sync FrogPilot branch
           if [ "$UPSTREAM_COMMIT_FROGPILOT" != "$YOUR_COMMIT_FROGPILOT" ]; then
             echo "FrogPilot branch has updates from the upstream. Syncing..."
-            git clone https://github.com/pkp24/FrogPilot.git
+            git clone --single-branch --branch FrogPilot --depth 1 https://github.com/pkp24/FrogPilot.git FrogPilot
             cd FrogPilot
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
             git remote add upstream https://github.com/FrogAi/FrogPilot.git
-            git fetch upstream
-            git checkout FrogPilot
+            git fetch upstream FrogPilot --depth 1
+            git checkout -b FrogPilot --track upstream/FrogPilot
             git branch temp-branch
             git reset --hard upstream/FrogPilot
             if git ls-tree -d temp-branch:.github/workflows >/dev/null 2>&1; then
@@ -119,6 +119,7 @@ jobs:
             git branch -D temp-branch
             git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git FrogPilot --force
             cd ..
+            rm -rf FrogPilot  # Remove the directory after sync
           else
             echo "FrogPilot branch is up to date."
           fi
@@ -126,16 +127,17 @@ jobs:
           # Sync FrogPilot-Staging branch
           if [ "$UPSTREAM_COMMIT_STAGING" != "$YOUR_COMMIT_STAGING" ]; then
             echo "FrogPilot-Staging branch has updates from the upstream. Syncing..."
-            git clone https://github.com/pkp24/FrogPilot.git
-            cd FrogPilot
+            git clone --single-branch --branch FrogPilot-Staging --depth 1 https://github.com/pkp24/FrogPilot.git FrogPilot-Staging
+            cd FrogPilot-Staging
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
             git remote add upstream https://github.com/FrogAi/FrogPilot.git
-            git fetch upstream
-            git checkout staging
-            git reset --hard upstream/staging
-            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git staging --force
+            git fetch upstream FrogPilot-Staging --depth 1
+            git checkout -b FrogPilot-Staging --track upstream/FrogPilot-Staging
+            git reset --hard upstream/FrogPilot-Staging
+            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git FrogPilot-Staging --force
             cd ..
+            rm -rf FrogPilot-Staging  # Remove the directory after sync
           else
             echo "FrogPilot-Staging branch is up to date."
           fi
@@ -143,16 +145,27 @@ jobs:
           # Sync FrogPilot-Testing branch
           if [ "$UPSTREAM_COMMIT_TESTING" != "$YOUR_COMMIT_TESTING" ]; then
             echo "FrogPilot-Testing branch has updates from the upstream. Syncing..."
-            git clone https://github.com/pkp24/FrogPilot.git
-            cd FrogPilot
+            # Clone the repo. No need to specify --single-branch because we're going to reset it anyway
+            git clone --depth 1 https://github.com/pkp24/FrogPilot.git FrogPilot-Testing
+            cd FrogPilot-Testing
+            
+            # Configure Git user (necessary for commits, but there won't be any new commits here)
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
+            
+            # Add the upstream repository and fetch the specific branch
             git remote add upstream https://github.com/FrogAi/FrogPilot.git
-            git fetch upstream
-            git checkout testing
-            git reset --hard upstream/testing
-            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git testing --force
+            git fetch upstream FrogPilot-Testing --depth 1
+            
+            # Reset local FrogPilot-Testing to match upstream/FrogPilot-Testing exactly
+            git reset --hard upstream/FrogPilot-Testing
+            
+            # Force push the branch to your repository
+            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git HEAD:FrogPilot-Testing --force
+
             cd ..
+            rm -rf FrogPilot-Testing  # Clean up
           else
             echo "FrogPilot-Testing branch is up to date."
           fi
+
