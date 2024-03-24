@@ -9,41 +9,39 @@ jobs:
   copy_branch:
     runs-on: ubuntu-latest
     steps:
-    - name: Fetch branch
+    - name: Setup Git and Fetch Branches
       run: |
         git init
         git remote add origin https://github.com/${{ github.repository }}.git
-        git fetch origin FrogPilot-Staging
-        if git rev-parse --verify --quiet "origin/FrogPilot-Staging"; then
-          COMMIT_HASH=$(git rev-parse "origin/FrogPilot-Staging~1")
-          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-        else
+        git fetch origin FrogPilot-Staging spicystaging-temp
+        # Verify if FrogPilot-Staging exists
+        if ! git rev-parse --verify --quiet "origin/FrogPilot-Staging"; then
           echo "Branch FrogPilot-Staging not found"
           exit 1
         fi
-    - name: Check if the most recent commit not by pkp24 is the second most recent commit
-      if: env.COMMIT_HASH != ''
+        
+        # Find the second most recent commit of FrogPilot-Staging
+        COMMIT_HASH=$(git rev-parse "origin/FrogPilot-Staging~1")
+        echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
+        
+    - name: Check and Set Branch Update Requirement
+      env:
+        COMMIT_HASH: ${{ env.COMMIT_HASH }}
       run: |
-        LATEST_COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an' origin/FrogPilot-Staging)
-        if [[ "$LATEST_COMMIT_AUTHOR" != "pkp24" && "$LATEST_COMMIT_AUTHOR" != "github-actions[bot]" ]]; then
-          SECOND_LATEST_COMMIT_HASH=$(git rev-parse "origin/FrogPilot-Staging~1")
-          if [[ "$SECOND_LATEST_COMMIT_HASH" == "${{ env.COMMIT_HASH }}" ]]; then
-            echo "REMAKE_BRANCH=true" >> $GITHUB_ENV
-          else
-            echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
-          fi
+        # Check if the most recent relevant commit on spicystaging-temp is different
+        LATEST_COMMIT_NOT_BY_EXCLUDED=$(git log origin/spicystaging-temp --not --committer=pkp24 --not --committer=github-actions[bot] --pretty=format:'%H' -n 1)
+        if [[ "$LATEST_COMMIT_NOT_BY_EXCLUDED" != "$COMMIT_HASH" ]]; then
+          echo "REMAKE_BRANCH=true" >> $GITHUB_ENV
         else
           echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
         fi
-    - name: Checkout repository
-      if: env.REMAKE_BRANCH == 'true'
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Discard local changes and create new branch
+        
+    - name: Checkout and Update Branch
       if: env.REMAKE_BRANCH == 'true'
       run: |
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        git checkout -B spicystaging-temp ${{ env.COMMIT_HASH }} --force
+        git checkout -B spicystaging-temp $COMMIT_HASH --force
         git push origin spicystaging-temp --force
+      env:
+        COMMIT_HASH: ${{ env.COMMIT_HASH }}
