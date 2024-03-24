@@ -36,12 +36,20 @@ jobs:
           echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
         fi
         
-    - name: Checkout and Update Branch
+    - name: Checkout repository
+      if: env.REMAKE_BRANCH == 'true'
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Discard local changes and create new branch
       if: env.REMAKE_BRANCH == 'true'
       run: |
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        git checkout -B spicystaging-temp $COMMIT_HASH --force
-        git push origin spicystaging-temp --force
-      env:
-        COMMIT_HASH: ${{ env.COMMIT_HASH }}
+        git checkout -B spicystaging-temp ${{ env.COMMIT_HASH }} --force
+        
+        # Use the GITHUB_TOKEN for authentication
+        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}/spicystaging-temp --force
+
