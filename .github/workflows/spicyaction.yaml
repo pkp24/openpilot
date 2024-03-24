@@ -28,9 +28,9 @@ jobs:
         if [[ "$LATEST_COMMIT_AUTHOR" != "pkp24" && "$LATEST_COMMIT_AUTHOR" != "github-actions[bot]" ]]; then
           SECOND_LATEST_COMMIT_HASH=$(git rev-parse "origin/FrogPilot-Staging~1")
           if [[ "$SECOND_LATEST_COMMIT_HASH" == "${{ env.COMMIT_HASH }}" ]]; then
-            echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
-          else
             echo "REMAKE_BRANCH=true" >> $GITHUB_ENV
+          else
+            echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
           fi
         else
           echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
