@@ -1,9 +1,9 @@
 name: Make spicystaging-temp
 on:
   workflow_run:
-    workflows: ["Sync Fork"]
-    types: 
-      - completed
+    #workflows: ["Sync Fork"]
+    #types: 
+    #  - completed
   workflow_dispatch:
 jobs:
   copy_branch:
