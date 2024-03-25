@@ -127,15 +127,16 @@ jobs:
           # Sync FrogPilot-Staging branch
           if [ "$UPSTREAM_COMMIT_STAGING" != "$YOUR_COMMIT_STAGING" ]; then
             echo "FrogPilot-Staging branch has updates from the upstream. Syncing..."
-            git clone --single-branch --branch FrogPilot-Staging --depth 1 https://github.com/pkp24/FrogPilot.git FrogPilot-Staging
+            git clone --depth 1 https://github.com/pkp24/FrogPilot.git FrogPilot-Staging
             cd FrogPilot-Staging
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
             git remote add upstream https://github.com/FrogAi/FrogPilot.git
             git fetch upstream FrogPilot-Staging --depth 1
-            git checkout -b FrogPilot-Staging --track upstream/FrogPilot-Staging
+            
+            # Reset local FrogPilot-Staging to match upstream/FrogPilot-Staging exactly
             git reset --hard upstream/FrogPilot-Staging
-            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git FrogPilot-Staging --force
+            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git HEAD:FrogPilot-Staging --force
             cd ..
             rm -rf FrogPilot-Staging  # Remove the directory after sync
           else
