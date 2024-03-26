@@ -1,40 +1,34 @@
-name: Make better spicystaging-temp
-
+name: Modify spicystaging-temp branch
 on:
   workflow_dispatch:
 
 jobs:
-  copy_branch:
+  update-branch:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0 # Fetch all history for all branches and tags
-        
-    - name: Setup Git
-      run: |
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
+      # Setup Git
+      - name: Setup Git and Fetch Branch
+        run: |
+          git init
+          git remote add origin https://github.com/${{ github.repository }}.git
+          git fetch origin FrogPilot-Staging
+          git checkout -b spicystaging-temp origin/FrogPilot-Staging
+          # Setup user
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
 
-    - name: Identify commit to remove and perform rebase
-      run: |
-        # Find the commit hash to remove
-        BAD_COMMIT=$(git log --pretty=format:'%H' | grep -F -m 1 "Compile FrogPilot")
+      # Remove a specific commit
+      - name: Remove specific commit from history
+        run: |
+          COMMIT_HASH_TO_REMOVE=<commit-hash-of-Compile-FrogPilot>
+          # Find the parent commit of the one we want to remove
+          PARENT_HASH=$(git rev-parse "$COMMIT_HASH_TO_REMOVE"^)
+          # Rebase interactively but automatically, telling it to skip the bad commit
+          git rebase --onto $PARENT_HASH $COMMIT_HASH_TO_REMOVE spicystaging-temp
 
-        # If the bad commit is found, rebase to remove it
-        if [ ! -z "$BAD_COMMIT" ]; then
-          # Perform the rebase
-          git rebase --onto $BAD_COMMIT^ $BAD_COMMIT spicystaging-temp
-
-          # Now the spicystaging-temp branch is updated locally and ready to be pushed
-        else
-          echo "Commit to remove not found!"
-          exit 1
-        fi
-
-    - name: Force push to spicystaging-temp
-      run: |
-        # Use the GITHUB_TOKEN for authentication
-        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} spicystaging-temp --force
-
+      # Force push changes to remote branch
+      - name: Force push to spicystaging-temp branch
+        run: |
+          git push origin spicystaging-temp --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
