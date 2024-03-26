@@ -51,5 +51,6 @@ jobs:
         git checkout -B spicystaging-temp ${{ env.COMMIT_HASH }} --force
         
         # Use the GITHUB_TOKEN for authentication
-        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}/spicystaging-temp --force
+        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} spicystaging-temp --force
+
 
