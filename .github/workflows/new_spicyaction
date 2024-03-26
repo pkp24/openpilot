@@ -1,0 +1,40 @@
+name: Make better spicystaging-temp
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copy_branch:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # Fetch all history for all branches and tags
+        
+    - name: Setup Git
+      run: |
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+    - name: Identify commit to remove and perform rebase
+      run: |
+        # Find the commit hash to remove
+        BAD_COMMIT=$(git log --pretty=format:'%H' | grep -F -m 1 "Compile FrogPilot")
+
+        # If the bad commit is found, rebase to remove it
+        if [ ! -z "$BAD_COMMIT" ]; then
+          # Perform the rebase
+          git rebase --onto $BAD_COMMIT^ $BAD_COMMIT spicystaging-temp
+
+          # Now the spicystaging-temp branch is updated locally and ready to be pushed
+        else
+          echo "Commit to remove not found!"
+          exit 1
+        fi
+
+    - name: Force push to spicystaging-temp
+      run: |
+        # Use the GITHUB_TOKEN for authentication
+        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} spicystaging-temp --force
+
