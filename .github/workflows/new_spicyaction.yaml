@@ -20,6 +20,9 @@ jobs:
       # Remove a specific commit
       - name: Remove 'Compile FrogPilot' commit from history
         run: |
+          # Ensure the working directory is clean
+          git reset --hard HEAD
+
           # Find the commit hash based on the commit message
           COMMIT_HASH_TO_REMOVE=$(git log --grep='Compile FrogPilot' --format='%H' -n 1)
           if [[ ! -z "$COMMIT_HASH_TO_REMOVE" ]]; then
