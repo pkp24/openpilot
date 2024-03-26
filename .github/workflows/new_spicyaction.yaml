@@ -11,24 +11,26 @@ jobs:
         run: |
           git init
           git remote add origin https://github.com/${{ github.repository }}.git
-          git fetch origin FrogPilot-Staging
+          git fetch --depth=50 origin FrogPilot-Staging
           git checkout -b spicystaging-temp origin/FrogPilot-Staging
           # Setup user
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
       # Remove a specific commit
-      - name: Remove specific commit from history
+      - name: Remove 'Compile FrogPilot' commit from history
         run: |
-          COMMIT_HASH_TO_REMOVE=<commit-hash-of-Compile-FrogPilot>
-          # Find the parent commit of the one we want to remove
-          PARENT_HASH=$(git rev-parse "$COMMIT_HASH_TO_REMOVE"^)
-          # Rebase interactively but automatically, telling it to skip the bad commit
-          git rebase --onto $PARENT_HASH $COMMIT_HASH_TO_REMOVE spicystaging-temp
-
-      # Force push changes to remote branch
-      - name: Force push to spicystaging-temp branch
-        run: |
-          git push origin spicystaging-temp --force
+          # Find the commit hash based on the commit message
+          COMMIT_HASH_TO_REMOVE=$(git log --grep='Compile FrogPilot' --format='%H' -n 1)
+          if [[ ! -z "$COMMIT_HASH_TO_REMOVE" ]]; then
+            # Find the parent commit of the one we want to remove
+            PARENT_HASH=$(git rev-parse "$COMMIT_HASH_TO_REMOVE"^)
+            # Perform an interactive rebase but script it to remove the specific commit
+            git rebase --onto $PARENT_HASH $COMMIT_HASH_TO_REMOVE^ spicystaging-temp
+            # Force push changes to remote branch
+            git push origin spicystaging-temp --force
+          else
+            echo "Commit 'Compile FrogPilot' not found, nothing to remove."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
