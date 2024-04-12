@@ -98,31 +98,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Sync FrogPilot branch
-          if [ "$UPSTREAM_COMMIT_FROGPILOT" != "$YOUR_COMMIT_FROGPILOT" ]; then
-            echo "FrogPilot branch has updates from the upstream. Syncing..."
-            git clone --single-branch --branch FrogPilot --depth 1 https://github.com/pkp24/FrogPilot.git FrogPilot
-            cd FrogPilot
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
-            git remote add upstream https://github.com/FrogAi/FrogPilot.git
-            git fetch upstream FrogPilot --depth 1
-            git checkout -b FrogPilot --track upstream/FrogPilot
-            git branch temp-branch
-            git reset --hard upstream/FrogPilot
-            if git ls-tree -d temp-branch:.github/workflows >/dev/null 2>&1; then
-              git checkout temp-branch -- .github/workflows
-              git add .github/workflows
-              git commit -m "Restore workflow files" || true
-            else
-              echo ".github/workflows does not exist, nothing to restore."
-            fi
-            git branch -D temp-branch
-            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git FrogPilot --force
-            cd ..
-            rm -rf FrogPilot  # Remove the directory after sync
-          else
-            echo "FrogPilot branch is up to date."
-          fi
+          
 
           # Sync FrogPilot-Staging branch
           if [ "$UPSTREAM_COMMIT_STAGING" != "$YOUR_COMMIT_STAGING" ]; then
