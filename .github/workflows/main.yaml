@@ -1,7 +1,7 @@
 name: Sync Fork
 on:
-  #schedule:
-    #- cron: '*/30 * * * *' # Runs every 30 minutes
+  schedule:
+    - cron: '*/30 * * * *' # Runs every 30 minutes
   workflow_dispatch:
 
 jobs:
@@ -95,6 +95,8 @@ jobs:
           
       - name: Compare commits and sync branches
         env:
+          MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
+
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Sync FrogPilot branch
@@ -112,7 +114,8 @@ jobs:
             
             # Reset local FrogPilot-Staging to match upstream/FrogPilot-Staging exactly
             git reset --hard upstream/FrogPilot-Staging
-            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git HEAD:FrogPilot-Staging --force
+            git push --verbose https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git HEAD:FrogPilot-Staging --force
+
             cd ..
             rm -rf FrogPilot-Staging  # Remove the directory after sync
           else
@@ -138,7 +141,8 @@ jobs:
             git reset --hard upstream/FrogPilot-Testing
             
             # Force push the branch to your repository
-            git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/pkp24/FrogPilot.git HEAD:FrogPilot-Testing --force
+            # Use your PAT in the script
+            git push https://$GITHUB_ACTOR:${MY_PAT}@github.com/pkp24/FrogPilot.git HEAD:FrogPilot-Testing --force
 
             cd ..
             rm -rf FrogPilot-Testing  # Clean up
