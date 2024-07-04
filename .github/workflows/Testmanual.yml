@@ -23,6 +23,7 @@ jobs:
         id: find_commit
         run: |
           max_depth=10  # Define the maximum depth to check
+          commit_to_remove=""
           for depth in $(seq 2 $max_depth); do
             git fetch --depth=$depth origin Compilable-testing
             commit_to_remove=$(git log --pretty=format:"%H %s" | grep "compile" | head -n 1 | awk '{print $1}')
