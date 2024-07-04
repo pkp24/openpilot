@@ -1,0 +1,50 @@
+name: Remove Specific Commit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rebase-remove-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the Compilable-testing branch
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for rebase
+          ref: Compilable-testing
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Find the commit to remove incrementally
+        id: find_commit
+        run: |
+          max_depth=10  # Define the maximum depth to check
+          for depth in $(seq 2 $max_depth); do
+            git fetch --depth=$depth origin Compilable-testing
+            commit_to_remove=$(git log --pretty=format:"%H %s" | grep "compile" | head -n 1 | awk '{print $1}')
+            if [ ! -z "$commit_to_remove" ]; then
+              echo "Commit to remove: $commit_to_remove"
+              echo "commit=$commit_to_remove" >> $GITHUB_ENV
+              exit 0
+            fi
+          done
+          echo "No commit with 'compile' found."
+          echo "commit=none" >> $GITHUB_ENV
+
+      - name: Rebase and remove the commit
+        if: env.commit != 'none'
+        run: |
+          COMMIT_TO_REMOVE=${{ env.commit }}
+          # Fetch the entire history to ensure all parent commits are available
+          git fetch --unshallow
+          # Rebase and remove the specified commit
+          git rebase --onto $COMMIT_TO_REMOVE^ $COMMIT_TO_REMOVE
+
+      - name: Push changes
+        if: env.commit != 'none'
+        run: |
+          git push origin Compilable-testing --force
