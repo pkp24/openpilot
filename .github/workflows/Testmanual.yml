@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the Compilable-testing branch
+      - name: Checkout a shallow copy of the Compilable-testing branch
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Fetch all history for rebase
+          fetch-depth: 1  # Initially fetch the latest commit
           ref: Compilable-testing
 
       - name: Set up Git
@@ -36,12 +36,17 @@ jobs:
           echo "No commit with 'compile' found."
           echo "commit=none" >> $GITHUB_ENV
 
+      - name: Checkout the full branch history if a commit is found
+        if: env.commit != 'none'
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for rebase
+          ref: Compilable-testing
+
       - name: Rebase and remove the commit
         if: env.commit != 'none'
         run: |
           COMMIT_TO_REMOVE=${{ env.commit }}
-          # Fetch the entire history to ensure all parent commits are available
-          git fetch --unshallow
           # Rebase and remove the specified commit
           git rebase --onto $COMMIT_TO_REMOVE^ $COMMIT_TO_REMOVE
 
