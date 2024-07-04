@@ -10,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Setup Git and Fetch Branches
+      env:
+        MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
       run: |
         git init
-        git remote add origin https://github.com/${{ github.repository }}.git
+        git remote add origin https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }}.git
         git fetch origin FrogPilot-Staging spicystaging-temp
         # Verify if FrogPilot-Staging exists
         if ! git rev-parse --verify --quiet "origin/FrogPilot-Staging"; then
@@ -23,13 +25,25 @@ jobs:
         # Find the second most recent commit of FrogPilot-Staging
         COMMIT_HASH=$(git rev-parse "origin/FrogPilot-Staging~1")
         echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
+        echo "Second most recent commit of FrogPilot-Staging: $COMMIT_HASH"
         
     - name: Check and Set Branch Update Requirement
       env:
         COMMIT_HASH: ${{ env.COMMIT_HASH }}
+        MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
       run: |
+        # Debugging information
+        echo "Checking latest commit not by excluded authors on spicystaging-temp"
+        
         # Check if the most recent relevant commit on spicystaging-temp is different
+        if ! git remote | grep -q origin; then
+          git remote add origin https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }}.git
+        fi
+        git fetch origin spicystaging-temp
+        git log origin/spicystaging-temp --not --committer=pkp24 --not --committer=github-actions[bot] --pretty=format:'%H' -n 1
         LATEST_COMMIT_NOT_BY_EXCLUDED=$(git log origin/spicystaging-temp --not --committer=pkp24 --not --committer=github-actions[bot] --pretty=format:'%H' -n 1)
+        echo "LATEST_COMMIT_NOT_BY_EXCLUDED=$LATEST_COMMIT_NOT_BY_EXCLUDED"
+        
         if [[ "$LATEST_COMMIT_NOT_BY_EXCLUDED" != "$COMMIT_HASH" ]]; then
           echo "REMAKE_BRANCH=true" >> $GITHUB_ENV
         else
@@ -41,16 +55,16 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
     
     - name: Discard local changes and create new branch
       if: env.REMAKE_BRANCH == 'true'
+      env:
+        MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
       run: |
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         git checkout -B spicystaging-temp ${{ env.COMMIT_HASH }} --force
         
-        # Use the GITHUB_TOKEN for authentication
-        git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} spicystaging-temp --force
-
-
+        # Use the Personal Access Token for authentication
+        git push https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }} spicystaging-temp --force
