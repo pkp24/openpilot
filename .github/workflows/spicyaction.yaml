@@ -88,5 +88,8 @@ jobs:
             git rebase --onto $COMMIT_TO_REMOVE^ $COMMIT_TO_REMOVE
           fi
 
+          # Set upstream branch to avoid rebase errors
+          git branch --set-upstream-to=origin/FrogPilot-Staging spicystaging-temp
+
           # Use the Personal Access Token for authentication
           git push https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }} spicystaging-temp --force
