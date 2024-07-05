@@ -1,70 +1,92 @@
 name: Make spicystaging-temp
+
 on:
-  #workflow_run:
-    #workflows: ["Sync Fork"]
-    #types: 
-    #  - completed
   workflow_dispatch:
+
 jobs:
   copy_branch:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Setup Git and Fetch Branches
-      env:
-        MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
-      run: |
-        git init
-        git remote add origin https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }}.git
-        git fetch origin FrogPilot-Staging spicystaging-temp
-        # Verify if FrogPilot-Staging exists
-        if ! git rev-parse --verify --quiet "origin/FrogPilot-Staging"; then
-          echo "Branch FrogPilot-Staging not found"
-          exit 1
-        fi
-        
-        # Find the second most recent commit of FrogPilot-Staging
-        COMMIT_HASH=$(git rev-parse "origin/FrogPilot-Staging~1")
-        echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-        echo "Second most recent commit of FrogPilot-Staging: $COMMIT_HASH"
-        
-    - name: Check and Set Branch Update Requirement
-      env:
-        COMMIT_HASH: ${{ env.COMMIT_HASH }}
-        MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
-      run: |
-        # Debugging information
-        echo "Checking latest commit not by excluded authors on spicystaging-temp"
-        
-        # Check if the most recent relevant commit on spicystaging-temp is different
-        if ! git remote | grep -q origin; then
+      - name: Setup Git and Fetch Branches
+        env:
+          MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
+        run: |
+          git init
           git remote add origin https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }}.git
-        fi
-        git fetch origin spicystaging-temp
-        git log origin/spicystaging-temp --not --committer=pkp24 --not --committer=github-actions[bot] --pretty=format:'%H' -n 1
-        LATEST_COMMIT_NOT_BY_EXCLUDED=$(git log origin/spicystaging-temp --not --committer=pkp24 --not --committer=github-actions[bot] --pretty=format:'%H' -n 1)
-        echo "LATEST_COMMIT_NOT_BY_EXCLUDED=$LATEST_COMMIT_NOT_BY_EXCLUDED"
-        
-        if [[ "$LATEST_COMMIT_NOT_BY_EXCLUDED" != "$COMMIT_HASH" ]]; then
-          echo "REMAKE_BRANCH=true" >> $GITHUB_ENV
-        else
-          echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
-        fi
-        
-    - name: Checkout repository
-      if: env.REMAKE_BRANCH == 'true'
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
-    
-    - name: Discard local changes and create new branch
-      if: env.REMAKE_BRANCH == 'true'
-      env:
-        MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
-      run: |
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
-        git checkout -B spicystaging-temp ${{ env.COMMIT_HASH }} --force
-        
-        # Use the Personal Access Token for authentication
-        git push https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }} spicystaging-temp --force
+          git fetch origin FrogPilot-Staging spicystaging-temp
+          # Verify if FrogPilot-Staging exists
+          if ! git rev-parse --verify --quiet "origin/FrogPilot-Staging"; then
+            echo "Branch FrogPilot-Staging not found"
+            exit 1
+          fi
+          
+          # Find the second most recent commit of FrogPilot-Staging
+          COMMIT_HASH=$(git rev-parse "origin/FrogPilot-Staging~1")
+          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
+          echo "Second most recent commit of FrogPilot-Staging: $COMMIT_HASH"
+          
+      - name: Check and Set Branch Update Requirement
+        env:
+          COMMIT_HASH: ${{ env.COMMIT_HASH }}
+          MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
+        run: |
+          # Debugging information
+          echo "Checking latest commit not by excluded authors on spicystaging-temp"
+          
+          # Check if the most recent relevant commit on spicystaging-temp is different
+          if ! git remote | grep -q origin; then
+            git remote add origin https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }}.git
+          fi
+          git fetch origin spicystaging-temp
+          git log origin/spicystaging-temp --not --committer=pkp24 --not --committer=github-actions[bot] --pretty=format:'%H' -n 1
+          LATEST_COMMIT_NOT_BY_EXCLUDED=$(git log origin/spicystaging-temp --not --committer=pkp24 --not --committer=github-actions[bot] --pretty=format:'%H' -n 1)
+          echo "LATEST_COMMIT_NOT_BY_EXCLUDED=$LATEST_COMMIT_NOT_BY_EXCLUDED"
+          
+          if [[ "$LATEST_COMMIT_NOT_BY_EXCLUDED" != "$COMMIT_HASH" ]]; then
+            echo "REMAKE_BRANCH=true" >> $GITHUB_ENV
+          else
+            echo "REMAKE_BRANCH=false" >> $GITHUB_ENV
+          fi
+          
+      - name: Checkout repository
+        if: env.REMAKE_BRANCH == 'true'
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
+      
+      - name: Discard local changes and create new branch
+        if: env.REMAKE_BRANCH == 'true'
+        env:
+          MY_PAT: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git checkout -B spicystaging-temp ${{ env.COMMIT_HASH }} --force
+
+          # Find the commit to remove incrementally
+          max_depth=10  # Define the maximum depth to check
+          commit_to_remove=""
+          for depth in $(seq 2 $max_depth); do
+            git fetch --depth=$depth origin FrogPilot-Staging
+            commit_to_remove=$(git log --pretty=format:"%H %s" | grep -i "compile" | head -n 1 | awk '{print $1}')
+            if [ ! -z "$commit_to_remove" ]; then
+              echo "Commit to remove: $commit_to_remove"
+              echo "commit=$commit_to_remove" >> $GITHUB_ENV
+              break
+            fi
+          done
+
+          if [ -z "$commit_to_remove" ]; then
+            echo "No commit with 'compile' found."
+            echo "commit=none" >> $GITHUB_ENV
+          fi
+
+          COMMIT_TO_REMOVE=${{ env.commit }}
+          if [ "$COMMIT_TO_REMOVE" != "none" ]; then
+            git rebase --onto $COMMIT_TO_REMOVE^ $COMMIT_TO_REMOVE
+          fi
+
+          # Use the Personal Access Token for authentication
+          git push https://${{ github.actor }}:${{ env.MY_PAT }}@github.com/${{ github.repository }} spicystaging-temp --force
