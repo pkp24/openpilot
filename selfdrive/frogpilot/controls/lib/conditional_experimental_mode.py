@@ -30,16 +30,16 @@ class ConditionalExperimentalMode:
 
     if self.status_value not in {1, 2, 3, 4, 5, 6} and not carState.standstill:
       self.update_conditions(self.frogpilot_planner.tracking_lead, v_ego, v_lead, frogpilot_toggles)
-      self.experimental_mode = self.check_conditions(carState, frogpilotNavigation, modelData, v_ego, v_lead, frogpilot_toggles)
+      self.experimental_mode = self.check_conditions(carState, frogpilotNavigation, modelData, self.frogpilot_planner.tracking_lead, v_ego, v_lead, frogpilot_toggles)
       self.params_memory.put_int("CEStatus", self.status_value if self.experimental_mode else 0)
     else:
       self.experimental_mode = self.status_value in {2, 4, 6} or carState.standstill and self.experimental_mode
 
-  def check_conditions(self, carState, frogpilotNavigation, modelData, v_ego, v_lead, frogpilot_toggles):
+  def check_conditions(self, carState, frogpilotNavigation, modelData, tracking_lead, v_ego, v_lead, frogpilot_toggles):
     below_speed = frogpilot_toggles.conditional_limit > v_ego >= 1 and not tracking_lead
     below_speed_with_lead = frogpilot_toggles.conditional_limit_lead > v_ego >= 1 and tracking_lead
     if below_speed or below_speed_with_lead:
-      self.status_value = 7 if self.frogpilot_planner.tracking_lead else 8
+      self.status_value = 7 if tracking_lead else 8
       return True
 
     if frogpilot_toggles.conditional_signal and v_ego < CITY_SPEED_LIMIT and (carState.leftBlinker or carState.rightBlinker):
@@ -47,11 +47,11 @@ class ConditionalExperimentalMode:
       return True
 
     approaching_maneuver = modelData.navEnabled and (frogpilotNavigation.approachingIntersection or frogpilotNavigation.approachingTurn)
-    if frogpilot_toggles.conditional_navigation and approaching_maneuver and (frogpilot_toggles.conditional_navigation_lead or not self.frogpilot_planner.tracking_lead):
+    if frogpilot_toggles.conditional_navigation and approaching_maneuver and (frogpilot_toggles.conditional_navigation_lead or not tracking_lead):
       self.status_value = 10 if frogpilotNavigation.approachingIntersection else 11
       return True
 
-    if frogpilot_toggles.conditional_curves and self.curve_detected and (frogpilot_toggles.conditional_curves_lead or not self.frogpilot_planner.tracking_lead):
+    if frogpilot_toggles.conditional_curves and self.curve_detected and (frogpilot_toggles.conditional_curves_lead or not tracking_lead):
       self.status_value = 12
       return True
 

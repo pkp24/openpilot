@@ -206,16 +206,16 @@ class FrogPilotVariables:
         toggle.model = DEFAULT_MODEL
     else:
       toggle.model = current_model
-    if available_model_names is None:
-      current_model_name = DEFAULT_MODEL_NAME
-    else:
-      current_model_name = available_model_names.split(',')[available_models.split(',').index(toggle.model)]
-    if os.path.exists(os.path.join(MODELS_PATH, f"{toggle.model}.thneed")):
-      toggle.part_model_param = process_model_name(current_model_name)
-    else:
+    if not os.path.exists(os.path.join(MODELS_PATH, f"{toggle.model}.thneed")):
       toggle.model = DEFAULT_MODEL
       current_model_name = DEFAULT_MODEL_NAME
       toggle.part_model_param = ""
+    elif available_model_names is None:
+      current_model_name = DEFAULT_MODEL_NAME
+      toggle.part_model_param = ""
+    else:
+      current_model_name = available_model_names.split(',')[available_models.split(',').index(toggle.model)]
+      toggle.part_model_param = process_model_name(current_model_name)
     toggle.navigationless_model = toggle.model not in NAVIGATION_MODELS
     toggle.radarless_model = toggle.model in RADARLESS_MODELS
     toggle.secretgoodopenpilot_model = toggle.model == "secret-good-openpilot"

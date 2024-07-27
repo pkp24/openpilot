@@ -31,15 +31,18 @@ void ScreenRecorder::toggleRecording() {
 }
 
 void ScreenRecorder::start() {
-  if (recording) return;
+  if (recording) {
+    return;
+  }
 
   recording = true;
   frame = 0;
   rootWidget = this;
 
   char filename[64];
-  time_t currentTime = time(NULL);
-  strftime(filename, sizeof(filename), "%B_%d_%Y-%I:%M%p.mp4", localtime(&currentTime));
+  QDateTime currentTime = QDateTime::currentDateTime();
+  QString formattedTime = currentTime.toString("MMMM_dd_yyyy-hh:mmAP");
+  snprintf(filename, sizeof(filename), "%s.mp4", formattedTime.toUtf8().constData());
 
   while (rootWidget->parentWidget() != nullptr) {
     rootWidget = rootWidget->parentWidget();
@@ -58,7 +61,9 @@ void ScreenRecorder::start() {
 }
 
 void ScreenRecorder::stop() {
-  if (!recording) return;
+  if (!recording) {
+    return;
+  }
 
   recording = false;
   update();
@@ -106,11 +111,15 @@ void ScreenRecorder::encodingThreadFunction() {
 
 void ScreenRecorder::updateScreen() {
   if (!uiState()->scene.started) {
-    if (recording) stop();
+    if (recording) {
+      stop();
+    }
     return;
   }
 
-  if (!recording) return;
+  if (!recording) {
+    return;
+  }
 
   if (milliseconds() - started > 1000 * 60 * 3) {
     stop();
