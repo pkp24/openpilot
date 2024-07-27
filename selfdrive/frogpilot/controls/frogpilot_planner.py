@@ -46,7 +46,7 @@ class FrogPilotPlanner:
   def __init__(self):
     self.params_memory = Params("/dev/shm/params")
 
-    self.cem = ConditionalExperimentalMode()
+    self.cem = ConditionalExperimentalMode(self)
     self.lead_one = Lead()
     self.mtsc = MapTurnSpeedController()
 
@@ -97,7 +97,7 @@ class FrogPilotPlanner:
 
     run_cem = frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.force_stops or frogpilot_toggles.show_stopping_point
     if run_cem and (controlsState.enabled or frogpilotCarControl.alwaysOnLateral) and driving_gear:
-      self.cem.update(carState, self.forcing_stop, frogpilotNavigation, modelData, self.model_length, self.model_stopped, self.road_curvature, self.slower_lead, self.tracking_lead, v_ego, v_lead, frogpilot_toggles)
+      self.cem.update(carState, frogpilotNavigation, modelData, v_ego, v_lead, frogpilot_toggles)
 
     check_lane_width = frogpilot_toggles.adjacent_lanes or frogpilot_toggles.blind_spot_path or frogpilot_toggles.lane_detection
     if check_lane_width and v_ego >= frogpilot_toggles.minimum_lane_change_speed:
