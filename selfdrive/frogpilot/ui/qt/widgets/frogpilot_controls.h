@@ -188,7 +188,7 @@ class FrogPilotButtonsControl : public ParamControl {
   Q_OBJECT
 public:
   FrogPilotButtonsControl(const QString &title, const QString &desc, const QString &icon,
-                          const std::vector<QString> &button_texts, const int minimum_button_width = 225)
+                          const std::vector<QString> &button_texts, const bool checkable = false, const int minimum_button_width = 225)
     : ParamControl("", title, desc, icon) {
     const QString style = R"(
       QPushButton {
@@ -199,6 +199,9 @@ public:
         padding: 0 25px 0 25px;
         color: #E4E4E4;
         background-color: #393939;
+      }
+      QPushButton:checked {
+        background-color: #33Ab4C;
       }
       QPushButton:pressed {
         background-color: #33Ab4C;
@@ -213,6 +216,7 @@ public:
     for (size_t i = 0; i < button_texts.size(); i++) {
       QPushButton *button = new QPushButton(button_texts[i], this);
       button->setStyleSheet(style);
+      button->setCheckable(checkable);
       button->setMinimumWidth(minimum_button_width);
       hlayout->addWidget(button);
       button_group->addButton(button, static_cast<int>(i));
@@ -223,6 +227,12 @@ public:
     }
 
     toggle.hide();
+  }
+
+  void updateButtonStyles(int id) {
+    for (auto button : button_group->buttons()) {
+      button->setChecked(button_group->id(button) == id);
+    }
   }
 
   void setEnabled(bool enable) {

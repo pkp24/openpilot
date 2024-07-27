@@ -107,23 +107,21 @@ def backup_toggles(params, params_storage):
 def convert_params(params, params_storage):
   def convert_param(key, action_func):
     try:
-      if params_storage.check_key(key):
-        if params_storage.get_bool(key):
-          action_func()
+      if params_storage.check_key(key) and params_storage.get_bool(key):
+        action_func()
     except UnknownKeyName:
       pass
 
   version = 8
 
   try:
-    if params_storage.check_key("ParamConversionVersion"):
-      if params_storage.get_int("ParamConversionVersion") == version:
-        print("Params already converted, moving on.")
-        return
-      print("Converting params...")
+    if params_storage.check_key("ParamConversionVersion") and params_storage.get_int("ParamConversionVersion") == version:
+      print("Params already converted, moving on.")
+      return
   except UnknownKeyName:
     pass
 
+  print("Converting params...")
   convert_param("ModelSelector", lambda: params.put_nonblocking("ModelManagement", "True"))
   convert_param("DragonPilotTune", lambda: params.put_nonblocking("FrogsGoMooTune", "True"))
 
