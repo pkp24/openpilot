@@ -72,7 +72,6 @@ class CarController(CarControllerBase):
     self.frogs_go_moo_tune = params.get_bool("FrogsGoMooTune")
 
     self.doors_locked = False
-    self.doors_unlocked = True
 
     self.pcm_accel_comp = 0
 
@@ -270,17 +269,15 @@ class CarController(CarControllerBase):
     new_actuators.gas = self.gas
 
     # Lock doors when in drive / unlock doors when in park
-    if self.doors_unlocked and CS.out.gearShifter != PARK:
+    if not self.doors_locked and CS.out.gearShifter != PARK:
       if frogpilot_toggles.lock_doors:
         can_sends.append(make_can_msg(0x750, LOCK_CMD, 0))
       self.doors_locked = True
-      self.doors_unlocked = False
 
     elif self.doors_locked and CS.out.gearShifter == PARK:
       if frogpilot_toggles.unlock_doors:
         can_sends.append(make_can_msg(0x750, UNLOCK_CMD, 0))
       self.doors_locked = False
-      self.doors_unlocked = True
 
     self.frame += 1
     return new_actuators, can_sends

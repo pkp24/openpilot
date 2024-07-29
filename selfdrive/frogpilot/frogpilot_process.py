@@ -100,6 +100,7 @@ def frogpilot_thread():
 
   is_release = FrogPilotVariables.release
   run_time_checks = False
+  started_previously = False
   time_validated = system_time_valid()
   update_toggles = False
 
@@ -114,6 +115,9 @@ def frogpilot_thread():
     now = datetime.datetime.now()
     deviceState = sm['deviceState']
     started = deviceState.started
+
+    if not started and started_previously:
+      frogpilot_planner = FrogPilotPlanner()
 
     if started and sm.updated['modelV2']:
       frogpilot_planner.update(sm['carState'], sm['controlsState'], sm['frogpilotCarControl'], sm['frogpilotCarState'],
@@ -140,6 +144,8 @@ def frogpilot_thread():
         run_thread_with_lock("backup_toggles", locks["backup_toggles"], backup_toggles, (params, params_storage))
 
       update_toggles = False
+
+    started_previously = started
 
     if now.second == 0:
       run_time_checks = True

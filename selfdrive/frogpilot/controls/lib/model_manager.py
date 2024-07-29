@@ -193,9 +193,12 @@ def validate_models(params):
   if "(Default)" in current_model_name and current_model_name != DEFAULT_MODEL_NAME:
     params.put_nonblocking("ModelName", current_model_name.replace(" (Default)", ""))
 
-  available_models = params.get("AvailableModels", encoding='utf-8').split(',')
+  available_models = params.get("AvailableModels", encoding='utf-8')
+  if available_models is None:
+    return
+
   for model_file in os.listdir(MODELS_PATH):
-    if model_file.endswith('.thneed') and model_file[:-7] not in available_models:
+    if model_file.endswith('.thneed') and model_file[:-7] not in available_models.split(','):
       if model_file == current_model:
         params.put_nonblocking("Model", DEFAULT_MODEL)
         params.put_nonblocking("ModelName", DEFAULT_MODEL_NAME)
