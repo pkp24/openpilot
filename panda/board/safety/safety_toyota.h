@@ -184,6 +184,7 @@ static void toyota_rx_hook(const CANPacket_t *to_push) {
         update_sample(&angle_meas, angle_meas_new);
       }
     }
+
     if (addr == 0x1D3) {
       acc_main_on = GET_BIT(to_push, 15U);
     }
@@ -362,7 +363,12 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
   if (addr == 0x750) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
     bool invalid_uds_msg = (GET_BYTES(to_send, 0, 4) != 0x003E020FU) || (GET_BYTES(to_send, 4, 4) != 0x0U);
-    if (invalid_uds_msg) {
+    // AleSato added some more hack'sss
+    bool valid_uds_msgs = (GET_BYTES(to_send, 0, 4) == 0x11300540U) &&  // automatic door locking and unlocking
+                         ((GET_BYTES(to_send, 4, 4) == 0x00004000U) ||  // unlock
+                          (GET_BYTES(to_send, 4, 4) == 0x00008000U));   // lock
+
+    if (invalid_uds_msg && !valid_uds_msgs) {
       tx = 0;
     }
   }
