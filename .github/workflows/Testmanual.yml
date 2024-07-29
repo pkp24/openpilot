@@ -26,14 +26,14 @@ jobs:
           commit_to_remove=""
           for depth in $(seq 2 $max_depth); do
             git fetch --depth=$depth origin Compilable-testing
-            commit_to_remove=$(git log --pretty=format:"%H %s" | grep "compile" | head -n 1 | awk '{print $1}')
+            commit_to_remove=$(git log --pretty=format:"%H %s" | grep "Compile" | head -n 1 | awk '{print $1}')
             if [ ! -z "$commit_to_remove" ]; then
               echo "Commit to remove: $commit_to_remove"
               echo "commit=$commit_to_remove" >> $GITHUB_ENV
               exit 0
             fi
           done
-          echo "No commit with 'compile' found."
+          echo "No commit with 'Compile' found."
           echo "commit=none" >> $GITHUB_ENV
 
       - name: Checkout the full branch history if a commit is found
