@@ -58,7 +58,6 @@ void HomeWindow::showSidebar(bool show) {
 
 void HomeWindow::showMapPanel(bool show) {
   onroad->showMapPanel(show);
-  uiState()->scene.map_open = true;
 }
 
 void HomeWindow::updateState(const UIState &s) {
@@ -72,6 +71,9 @@ void HomeWindow::updateState(const UIState &s) {
 
   if (s.scene.started) {
     showDriverView(s.scene.driver_camera_timer >= 10, true);
+    if (s.scene.map_open) {
+      showSidebar(false);
+    }
   }
 }
 
@@ -83,7 +85,6 @@ void HomeWindow::offroadTransition(bool offroad) {
   } else {
     showSidebar(params.getBool("Sidebar"));
     slayout->setCurrentWidget(onroad);
-    uiState()->scene.map_open = onroad->isMapVisible();
   }
 }
 
@@ -107,7 +108,6 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
   if ((onroad->isVisible() || body->isVisible()) && (!sidebar->isVisible() || e->x() > sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible() && !onroad->isMapVisible());
-    uiState()->scene.map_open = onroad->isMapVisible();
     params.putBool("Sidebar", sidebar->isVisible());
   }
 }

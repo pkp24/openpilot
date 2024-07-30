@@ -540,10 +540,10 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
   int x = rightHandDM ? width() - offset : offset;
-  if (rightHandDM) {
-    x -= map_settings_btn->isEnabled() ? 250 : 0;
-  } else {
-    x += onroadDistanceButton ? 250 : 0;
+  if (rightHandDM && map_settings_btn->isEnabled()) {
+    x -= 250;
+  } else if (onroadDistanceButton) {
+    x += 250;
   }
   offset += showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI ? 25 : 0;
   int y = height() - offset;

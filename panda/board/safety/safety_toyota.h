@@ -364,10 +364,7 @@ static bool toyota_tx_hook(const CANPacket_t *to_send) {
     // this address is sub-addressed. only allow tester present to radar (0xF)
     bool invalid_uds_msg = (GET_BYTES(to_send, 0, 4) != 0x003E020FU) || (GET_BYTES(to_send, 4, 4) != 0x0U);
     // AleSato added some more hack'sss
-    bool valid_uds_msgs = (GET_BYTES(to_send, 0, 4) == 0x11300540U) &&  // automatic door locking and unlocking
-                         ((GET_BYTES(to_send, 4, 4) == 0x00004000U) ||  // unlock
-                          (GET_BYTES(to_send, 4, 4) == 0x00008000U));   // lock
-
+    bool valid_uds_msgs = (GET_BYTES(to_send, 0, 4) == 0x11300540U);  // automatic door locking and unlocking
     if (invalid_uds_msg && !valid_uds_msgs) {
       tx = 0;
     }

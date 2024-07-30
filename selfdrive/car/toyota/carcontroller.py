@@ -273,7 +273,6 @@ class CarController(CarControllerBase):
       if frogpilot_toggles.lock_doors:
         can_sends.append(make_can_msg(0x750, LOCK_CMD, 0))
       self.doors_locked = True
-
     elif self.doors_locked and CS.out.gearShifter == PARK:
       if frogpilot_toggles.unlock_doors:
         can_sends.append(make_can_msg(0x750, UNLOCK_CMD, 0))
