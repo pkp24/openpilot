@@ -97,7 +97,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // hide map settings button for alerts and flip for right hand DM
   if (map_settings_btn->isEnabled()) {
     map_settings_btn->setVisible(!hideBottomIcons && compass && !hideMapIcon);
-    main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignTop);
+    main_layout->setAlignment(map_settings_btn, (rightHandDM && !compass || !rightHandDM && compass ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
 }
 
@@ -540,7 +540,11 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
   int x = rightHandDM ? width() - offset : offset;
-  x += onroadDistanceButton ? 250 : 0;
+  if (rightHandDM) {
+    x -= map_settings_btn->isEnabled() ? 250 : 0;
+  } else {
+    x += onroadDistanceButton ? 250 : 0;
+  }
   offset += showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI ? 25 : 0;
   int y = height() - offset;
   float opacity = dmActive ? 0.65 : 0.2;
@@ -757,16 +761,16 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
   bottom_layout = new QHBoxLayout();
 
   distance_btn = new DistanceButton(this);
-  bottom_layout->addWidget(distance_btn);
+  bottom_layout->addWidget(distance_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
 
   QSpacerItem *spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
   bottom_layout->addItem(spacer);
 
   compass_img = new Compass(this);
-  bottom_layout->addWidget(compass_img);
+  bottom_layout->addWidget(compass_img, 0, Qt::AlignBottom | Qt::AlignRight);
 
   map_settings_btn_bottom = new MapSettingsButton(this);
-  bottom_layout->addWidget(map_settings_btn_bottom);
+  bottom_layout->addWidget(map_settings_btn_bottom, 0, Qt::AlignBottom | Qt::AlignRight);
 
   main_layout->addLayout(bottom_layout);
 
@@ -913,7 +917,7 @@ void AnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &painter, const UISce
   map_settings_btn_bottom->setEnabled(map_settings_btn->isEnabled());
   if (map_settings_btn_bottom->isEnabled()) {
     map_settings_btn_bottom->setVisible(!hideBottomIcons && !compass && !hideMapIcon);
-    bottom_layout->setAlignment(map_settings_btn_bottom, rightHandDM ? Qt::AlignLeft : Qt::AlignRight);
+    bottom_layout->setAlignment(map_settings_btn_bottom, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
 
   onroadDistanceButton = scene.onroad_distance_button;
@@ -921,7 +925,7 @@ void AnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &painter, const UISce
   distance_btn->setVisible(enableDistanceButton);
   if (enableDistanceButton) {
     distance_btn->updateState(scene);
-    bottom_layout->setAlignment(distance_btn, (rightHandDM ? Qt::AlignRight : Qt::AlignLeft));
+    bottom_layout->setAlignment(distance_btn, (rightHandDM ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignBottom);
   }
 
   bool enablePedalIcons = scene.pedals_on_ui && !bigMapOpen;

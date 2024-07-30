@@ -81,6 +81,7 @@ void HomeWindow::offroadTransition(bool offroad) {
   if (offroad) {
     slayout->setCurrentWidget(home);
   } else {
+    showSidebar(params.getBool("Sidebar"));
     slayout->setCurrentWidget(onroad);
     uiState()->scene.map_open = onroad->isMapVisible();
   }
