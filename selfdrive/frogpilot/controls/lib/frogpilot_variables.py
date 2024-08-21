@@ -74,7 +74,7 @@ class FrogPilotVariables:
     toggle.promptDistracted_volume = self.params.get_int("PromptDistractedVolume") if toggle.alert_volume_control else 100
     toggle.refuse_volume = self.params.get_int("RefuseVolume") if toggle.alert_volume_control else 100
     toggle.warningSoft_volume = self.params.get_int("WarningSoftVolume") if toggle.alert_volume_control else 100
-    toggle.warningImmediate_volume = self.params.get_int("WarningImmediateVolume") if toggle.alert_volume_control else 100
+    toggle.warningImmediate_volume = max(self.params.get_int("WarningImmediateVolume"), 25) if toggle.alert_volume_control else 100
 
     toggle.always_on_lateral = self.params.get_bool("AlwaysOnLateral") and self.params.get_bool("AlwaysOnLateralSet")
     toggle.always_on_lateral_lkas = toggle.always_on_lateral and self.params.get_bool("AlwaysOnLateralLKAS")

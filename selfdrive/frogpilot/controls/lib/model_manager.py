@@ -42,17 +42,17 @@ class ModelManager:
     if verify_download(model_path, model_url):
       print(f"Model {model} redownloaded and verified successfully from GitLab.")
     else:
-      self.handle_error(model_path, "GitLab verification failed", "Verification failed", self.download_param, self.download_progress_param, self.params_memory)
+      handle_error(model_path, "GitLab verification failed", "Verification failed", self.download_param, self.download_progress_param, self.params_memory)
 
   def download_model(self, model_to_download):
     model_path = os.path.join(MODELS_PATH, f"{model_to_download}.thneed")
     if os.path.exists(model_path):
-      self.handle_error(model_path, "Model already exists...", "Model already exists...", self.download_param, self.download_progress_param, self.params_memory)
+      handle_error(model_path, "Model already exists...", "Model already exists...", self.download_param, self.download_progress_param, self.params_memory)
       return
 
     self.repo_url = get_repository_url()
     if not self.repo_url:
-      self.handle_error(model_path, "GitHub and GitLab are offline...", "Repository unavailable", self.download_param, self.download_progress_param, self.params_memory)
+      handle_error(model_path, "GitHub and GitLab are offline...", "Repository unavailable", self.download_param, self.download_progress_param, self.params_memory)
       return
 
     model_url = f"{self.repo_url}Models/{model_to_download}.thneed"
@@ -108,19 +108,19 @@ class ModelManager:
           if not verify_download(model_path, model_url):
             print(f"Model {model} is outdated. Re-downloading...")
             delete_file(model_path)
-            self.remove_model_params(available_model_names, model)
+            self.remove_model_params(available_model_names, available_models, model)
             self.queue_model_download(model)
             all_models_downloaded = False
       else:
         if automatically_update_models:
           print(f"Model {model} isn't downloaded. Downloading...")
-          self.remove_model_params(available_model_names, model)
+          self.remove_model_params(available_model_names, available_models, model)
           self.queue_model_download(model)
         all_models_downloaded = False
 
     return all_models_downloaded
 
-  def remove_model_params(self, available_model_names, model):
+  def remove_model_params(self, available_model_names, available_models, model):
     part_model_param = process_model_name(available_model_names[available_models.index(model)])
     self.params.remove(part_model_param + "CalibrationParams")
     self.params.remove(part_model_param + "LiveTorqueParameters")
@@ -180,15 +180,20 @@ class ModelManager:
   def download_all_models(self):
     self.repo_url = get_repository_url()
     if not self.repo_url:
-      self.handle_error(None, "GitHub and GitLab are offline...", "Repository unavailable", self.download_param, self.download_progress_param, self.params_memory)
+      handle_error(None, "GitHub and GitLab are offline...", "Repository unavailable", self.download_param, self.download_progress_param, self.params_memory)
       return
 
     model_info = self.fetch_models(f"{self.repo_url}Versions/model_names_{VERSION}.json")
     if not model_info:
-      self.handle_error(None, "Unable to update model list...", "Model list unavailable", self.download_param, self.download_progress_param, self.params_memory)
+      handle_error(None, "Unable to update model list...", "Model list unavailable", self.download_param, self.download_progress_param, self.params_memory)
       return
 
-    available_models = self.params.get("AvailableModels", encoding='utf-8').split(',')
+    available_models = self.params.get("AvailableModels", encoding='utf-8')
+    if not available_models:
+      handle_error(None, "There's no model to download...", "There's no model to download...", self.download_param, self.download_progress_param, self.params_memory)
+      return
+
+    available_models = available_models.split(',')
     available_model_names = self.params.get("AvailableModelsNames", encoding='utf-8').split(',')
 
     for model in available_models:

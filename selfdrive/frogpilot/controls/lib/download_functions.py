@@ -6,59 +6,69 @@ from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import delet
 GITHUB_URL = "https://raw.githubusercontent.com/FrogAi/FrogPilot-Resources/"
 GITLAB_URL = "https://gitlab.com/FrogAi/FrogPilot-Resources/-/raw/"
 
-def download_file(cancel_param, destination, progress_param, url, theme_param, params_memory):
+def download_file(cancel_param, destination, progress_param, url, download_param, params_memory):
   try:
     os.makedirs(os.path.dirname(destination), exist_ok=True)
-    with requests.get(url, stream=True, timeout=5) as response:
+    total_size = get_remote_file_size(url)
+    if total_size == 0:
+      return
+
+    downloaded_size = 0
+    with requests.get(url, stream=True, timeout=5) as response, open(destination, 'wb') as file:
       response.raise_for_status()
-      total_size = get_remote_file_size(url)
-      downloaded_size = 0
+      for chunk in response.iter_content(chunk_size=8192):
+        if params_memory.get_bool(cancel_param):
+          handle_error(destination, "Download cancelled.", "Download cancelled.", download_param, progress_param, params_memory)
+          return
 
-      with open(destination, 'wb') as file:
-        for chunk in response.iter_content(chunk_size=8192):
-          if params_memory.get_bool(cancel_param):
-            handle_error(destination, "Download cancelled...", "Download cancelled...", theme_param, progress_param, params_memory)
-            return
+        if chunk:
+          file.write(chunk)
+          downloaded_size += len(chunk)
+          progress = (downloaded_size / total_size) * 100
 
-          if chunk:
-            file.write(chunk)
-            downloaded_size += len(chunk)
-            progress = (downloaded_size / total_size) * 100
-
-            if progress != 100:
-              params_memory.put(progress_param, f"{progress:.0f}%")
-            else:
-              params_memory.put(progress_param, "Verifying authenticity...")
-
-  except requests.HTTPError as http_error:
-    if http_error.response.status_code == 404:
-      return False
-    handle_error(destination, f"Failed: Server error ({http_error.response.status_code})", http_error, theme_param, progress_param, params_memory)
-  except requests.ConnectionError as connection_error:
-    handle_error(destination, "Failed: Connection dropped...", connection_error, theme_param, progress_param, params_memory)
-  except requests.Timeout as timeout_error:
-    handle_error(destination, "Failed: Download timed out...", timeout_error, theme_param, progress_param, params_memory)
-  except requests.RequestException as request_error:
-    handle_error(destination, "Failed: Network request error. Check connection.", request_error, theme_param, progress_param, params_memory)
+          if progress != 100:
+            params_memory.put(progress_param, f"{progress:.0f}%")
+          else:
+            params_memory.put(progress_param, "Verifying authenticity...")
   except Exception as e:
-    handle_error(destination, "Failed: Unexpected error.", e, theme_param, progress_param, params_memory)
+    handle_request_error(e, destination, download_param, progress_param, params_memory)
 
 def handle_error(destination, error_message, error, download_param, progress_param, params_memory):
   print(f"Error occurred: {error}")
-  params_memory.put(progress_param, error_message)
-  params_memory.remove(download_param)
   if destination:
     delete_file(destination)
+  if download_param:
+    params_memory.remove(download_param)
+  if progress_param:
+    params_memory.put(progress_param, error_message)
+
+def handle_request_error(error, destination, download_param, progress_param, params_memory):
+  if isinstance(error, requests.HTTPError):
+    error_message = f"Server error ({error.response.status_code})" if error.response else "Server error."
+  elif isinstance(error, requests.ConnectionError):
+    error_message = "Connection dropped."
+  elif isinstance(error, requests.Timeout):
+    error_message = "Download timed out."
+  elif isinstance(error, requests.RequestException):
+    error_message = "Network request error. Check connection."
+  else:
+    error_message = "Unexpected error."
+
+  handle_error(destination, f"Failed: {error_message}", error, download_param, progress_param, params_memory)
 
 def get_remote_file_size(url):
-  headers = {'Accept-Encoding': 'identity'}
-  response = requests.head(url, headers=headers, timeout=5)
-  response.raise_for_status()
-
-  content_length = response.headers.get('Content-Length', None)
-  if content_length is None:
+  try:
+    response = requests.head(url, headers={'Accept-Encoding': 'identity'}, timeout=5)
+    response.raise_for_status()
+    return int(response.headers.get('Content-Length', 0))
+  except requests.HTTPError as e:
+    if e.response.status_code == 404:
+      return 0
+    else:
+      handle_request_error(e, None, None, None, None)
+  except Exception as e:
+    handle_request_error(e, None, None, None, None)
     return 0
-  return int(content_length)
 
 def get_repository_url():
   if is_url_pingable("https://github.com"):
@@ -71,16 +81,9 @@ def link_valid(url):
   try:
     response = requests.head(url, allow_redirects=True, timeout=5)
     response.raise_for_status()
-    return response.status_code == 200
-  except requests.HTTPError:
-    return False
-  except requests.ConnectionError:
-    return False
-  except requests.Timeout:
-    return False
-  except requests.RequestException:
-    return False
-  except Exception:
+    return True
+  except Exception as e:
+    handle_request_error(e, None, None, None, None)
     return False
 
 def verify_download(file_path, url):
