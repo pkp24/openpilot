@@ -54,7 +54,7 @@ class TorqueBuckets(PointBuckets):
 class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False):
     # FrogPilot variables
-    self.frogpilot_toggles = FrogPilotVariables.toggles
+    frogpilot_toggles = FrogPilotVariables.toggles
 
     self.update_toggles = False
 
@@ -100,10 +100,8 @@ class TorqueEstimator(ParameterEstimator):
     # try to restore cached params
     params = Params()
     params_cache = params.get("CarParamsPrevRoute")
-    if params.check_key(self.frogpilot_toggles.part_model_param + "LiveTorqueParameters"):
-      torque_cache = params.get(self.frogpilot_toggles.part_model_param + "LiveTorqueParameters")
-    else:
-      torque_cache = params.get("LiveTorqueParameters")
+    self.torque_key = frogpilot_toggles.part_model_param + "LiveTorqueParameters"
+    torque_cache = params.get(self.torque_key)
     if params_cache is not None and torque_cache is not None:
       try:
         with log.Event.from_bytes(torque_cache) as log_evt:
@@ -123,7 +121,7 @@ class TorqueEstimator(ParameterEstimator):
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
-        params.remove(self.frogpilot_toggles.part_model_param + "LiveTorqueParameters")
+        params.remove(self.torque_key)
 
     self.filtered_params = {}
     for param in initial_params:
@@ -246,6 +244,9 @@ def main(demo=False):
   # FrogPilot variables
   frogpilot_toggles = FrogPilotVariables.toggles
 
+  torque_key = frogpilot_toggles.part_model_param + "LiveTorqueParameters"
+  torque_cache = params.get(torque_key)
+
   while True:
     sm.update()
     if sm.all_checks():
@@ -261,7 +262,7 @@ def main(demo=False):
     # Cache points every 60 seconds while onroad
     if sm.frame % 240 == 0:
       msg = estimator.get_msg(valid=sm.all_checks(), with_points=True)
-      params.put_nonblocking(frogpilot_toggles.part_model_param + "LiveTorqueParameters", msg.to_bytes())
+      params.put_nonblocking(torque_key, msg.to_bytes())
 
 if __name__ == "__main__":
   import argparse

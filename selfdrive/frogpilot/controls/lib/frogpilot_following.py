@@ -57,7 +57,6 @@ class FrogPilotFollowing:
       standstill_offset = max(stopping_distance - v_ego, 0) * max(v_lead - v_ego, 0)
       acceleration_offset = clip((v_lead - v_ego) + standstill_offset - COMFORT_BRAKE, 1, distance_factor)
       self.acceleration_jerk = self.base_acceleration_jerk / acceleration_offset
-      self.danger_jerk = self.base_danger_jerk / acceleration_offset
       self.speed_jerk = self.base_speed_jerk / acceleration_offset
       self.t_follow /= acceleration_offset
 
@@ -73,4 +72,4 @@ class FrogPilotFollowing:
       self.slower_lead = braking_offset - far_lead_offset > 1
 
     if frogpilot_toggles.human_following:
-      self.danger_jerk = self.base_danger_jerk * clip(v_ego - v_lead, 1, CRUISING_SPEED)
+      self.danger_jerk = self.base_danger_jerk / clip(abs(v_ego - v_lead), 1, CRUISING_SPEED)

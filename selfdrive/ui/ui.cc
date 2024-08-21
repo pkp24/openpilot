@@ -252,6 +252,7 @@ static void update_state(UIState *s) {
   if (sm.updated("deviceState")) {
     auto deviceState = sm["deviceState"].getDeviceState();
     scene.online = deviceState.getNetworkType() != cereal::DeviceState::NetworkType::NONE;
+    scene.online &= !deviceState.getNetworkMetered();
   }
   if (sm.updated("frogpilotCarControl")) {
     auto frogpilotCarControl = sm["frogpilotCarControl"].getFrogpilotCarControl();
@@ -336,11 +337,18 @@ void ui_update_frogpilot_params(UIState *s, Params &params) {
   scene.show_aol_status_bar = always_on_lateral && !params.getBool("HideAOLStatusBar");
 
   bool bonus_content = params.getBool("BonusContent");
-  scene.holiday_themes = bonus_content && params.getBool("HolidayThemes");
   bool personalize_openpilot = bonus_content && params.getBool("PersonalizeOpenpilot");
-  scene.custom_colors = personalize_openpilot ? params.getInt("CustomColors") : 0;
-  scene.custom_icons = personalize_openpilot ? params.getInt("CustomIcons") : 0;
-  scene.custom_signals = personalize_openpilot ? params.getInt("CustomSignals") : 0;
+  scene.lane_lines_color = loadThemeColors("LaneLines");
+  scene.lead_marker_color = loadThemeColors("LeadMarker");
+  scene.path_color = loadThemeColors("Path");
+  scene.path_edges_color = loadThemeColors("PathEdge");
+  scene.road_edges_color = loadThemeColors("RoadEdges");
+  scene.sidebar_color1 = loadThemeColors("Sidebar1");
+  scene.sidebar_color2 = loadThemeColors("Sidebar2");
+  scene.sidebar_color3 = loadThemeColors("Sidebar3");
+  QString colorScheme = QString::fromStdString(params.get("CustomColors"));
+  scene.use_stock_colors = !personalize_openpilot || colorScheme == "stock" || params.getBool("UseStockColors");
+  scene.use_stock_wheel = !personalize_openpilot || QString::fromStdString(params.get("WheelIcon")) == "stock";
   scene.random_events = bonus_content && params.getBool("RandomEvents");
 
   scene.conditional_experimental = scene.longitudinal_control && params.getBool("ConditionalExperimental");
@@ -390,7 +398,6 @@ void ui_update_frogpilot_params(UIState *s, Params &params) {
 
   bool driving_personalities = scene.longitudinal_control && params.getBool("DrivingPersonalities");
   scene.onroad_distance_button = driving_personalities && params.getBool("OnroadDistanceButton");
-  scene.use_kaofui_icons = scene.onroad_distance_button && params.getBool("KaofuiIcons");
 
   scene.experimental_mode_via_screen = scene.longitudinal_control && params.getBool("ExperimentalModeActivation") && params.getBool("ExperimentalModeViaTap");
 
@@ -543,7 +550,6 @@ void UIState::update() {
 
   // FrogPilot variables that need to be constantly updated
   scene.conditional_status = scene.conditional_experimental && scene.enabled ? paramsMemory.getInt("CEStatus") : 0;
-  scene.current_holiday_theme = scene.holiday_themes ? paramsMemory.getInt("CurrentHolidayTheme") : 0;
   scene.driver_camera_timer = scene.driver_camera && scene.reverse ? scene.driver_camera_timer + 1 : 0;
   scene.force_onroad = paramsMemory.getBool("ForceOnroad");
   scene.started_timer = scene.started || started_prev ? scene.started_timer + 1 : 0;

@@ -19,7 +19,7 @@ from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_I
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import get_build_metadata, terms_version, training_version
 
-from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import frogpilot_boot_functions, setup_frogpilot, uninstall_frogpilot
+from openpilot.selfdrive.frogpilot.controls.lib.frogpilot_functions import convert_params, frogpilot_boot_functions, setup_frogpilot, uninstall_frogpilot
 from openpilot.selfdrive.frogpilot.controls.lib.model_manager import DEFAULT_MODEL, DEFAULT_MODEL_NAME
 
 
@@ -38,6 +38,7 @@ def manager_init() -> None:
   if build_metadata.release_channel:
     params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
+  convert_params(params, params_storage)
   threading.Thread(target=frogpilot_boot_functions, args=(build_metadata, params, params_storage,)).start()
 
   default_params: list[tuple[str, str | bytes]] = [
@@ -83,7 +84,6 @@ def manager_init() -> None:
     ("AutomaticUpdates", "1"),
     ("AvailableModels", ""),
     ("AvailableModelsNames", ""),
-    ("AvailableWheels", ""),
     ("BigMap", "0"),
     ("BlacklistedModels", ""),
     ("BlindSpotMetrics", "0"),
@@ -117,14 +117,15 @@ def manager_init() -> None:
     ("CrosstrekTorque", "1"),
     ("CurveSensitivity", "100"),
     ("CustomAlerts", "1"),
-    ("CustomColors", "1"),
+    ("CustomColors", "frog"),
     ("CustomCruise", "1"),
     ("CustomCruiseLong", "5"),
-    ("CustomIcons", "1"),
+    ("CustomDistanceIcons", "stock"),
+    ("CustomIcons", "frog_(animated)"),
     ("CustomPaths", "1"),
     ("CustomPersonalities", "0"),
-    ("CustomSignals", "1"),
-    ("CustomSounds", "1"),
+    ("CustomSignals", "frog"),
+    ("CustomSounds", "frog"),
     ("CustomUI", "1"),
     ("CydiaTune", "0"),
     ("DecelerationProfile", "1"),
@@ -178,7 +179,6 @@ def manager_init() -> None:
     ("HumanFollowing", "1"),
     ("IncreaseThermalLimits", "0"),
     ("JerkInfo", "1"),
-    ("KaofuiIcons", "0"),
     ("LaneChangeCustomizations", "1"),
     ("LaneChangeTime", "0"),
     ("LaneDetectionWidth", "60"),
@@ -315,6 +315,8 @@ def manager_init() -> None:
     ("SNGHack", "1"),
     ("SpeedLimitChangedAlert", "1"),
     ("SpeedLimitController", "1"),
+    ("StartupMessageBottom", "so I do what I want 🐸"),
+    ("StartupMessageTop", "Hippity hoppity this is my property"),
     ("StandardFollow", "1.45"),
     ("StandardJerkAcceleration", "100"),
     ("StandardJerkDanger", "100"),

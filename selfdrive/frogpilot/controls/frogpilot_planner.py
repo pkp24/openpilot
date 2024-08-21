@@ -75,11 +75,13 @@ class FrogPilotPlanner:
     self.always_on_lateral_active &= not (frogpilot_toggles.always_on_lateral_lkas and frogpilotCarState.alwaysOnLateralDisabled)
     self.always_on_lateral_active &= not (carState.brakePressed and v_ego < frogpilot_toggles.always_on_lateral_pause_speed) or carState.standstill
 
-    run_cem = frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.force_stops or frogpilot_toggles.show_stopping_point
+    run_cem = frogpilot_toggles.conditional_experimental_mode or frogpilot_toggles.force_stops or frogpilot_toggles.green_light_alert or frogpilot_toggles.show_stopping_point
     if run_cem and (controlsState.enabled or self.always_on_lateral_active) and driving_gear:
       self.cem.update(carState, frogpilotNavigation, modelData, v_ego, v_lead, frogpilot_toggles)
+    else:
+      self.cem.stop_light_detected = False
 
-    self.frogpilot_events.update(carState, frogpilotCarControl, frogpilotCarState, modelData, v_cruise, frogpilot_toggles)
+    self.frogpilot_events.update(carState, controlsState, frogpilotCarControl, frogpilotCarState, modelData, frogpilot_toggles)
     self.frogpilot_following.update(controlsState, frogpilotCarState, lead_distance, stopping_distance, v_ego, v_lead, frogpilot_toggles)
 
     check_lane_width = frogpilot_toggles.adjacent_lanes or frogpilot_toggles.blind_spot_path or frogpilot_toggles.lane_detection

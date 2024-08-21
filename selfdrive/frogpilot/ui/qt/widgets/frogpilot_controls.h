@@ -2,11 +2,16 @@
 
 #include <cmath>
 
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
 #include <QTimer>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 void updateFrogPilotToggles();
+
+QColor loadThemeColors(const QString &colorKey);
 
 class FrogPilotConfirmationDialog : public ConfirmationDialog {
   Q_OBJECT

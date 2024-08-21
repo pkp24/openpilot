@@ -164,7 +164,7 @@ class CarController(CarControllerBase):
       self.prohibit_neg_calculation = False
 
     # limit minimum to only positive until first positive is reached after engagement, don't calculate when long isn't active
-    if CC.longActive and not self.prohibit_neg_calculation and (self.cydia_tune or self.frogs_go_moo_tune and self.CP.carFingerprint not in TSS2_CAR):
+    if CC.longActive and not self.prohibit_neg_calculation and (self.cydia_tune or self.frogs_go_moo_tune):
       accel_offset = CS.pcm_neutral_force / self.CP.mass
     else:
       accel_offset = 0.
@@ -206,7 +206,7 @@ class CarController(CarControllerBase):
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
       # when stopping, send -2.5 raw acceleration immediately to prevent vehicle from creeping, else send actuators.accel
-      accel_raw = -2.5 if stopping and self.cydia_tune else actuators.accel
+      accel_raw = -2.5 if stopping and (self.cydia_tune or self.frogs_go_moo_tune) else actuators.accel
 
       # Press distance button until we are at the correct bar length. Only change while enabled to avoid skipping startup popup
       if self.frame % 6 == 0 and self.CP.openpilotLongitudinalControl:
@@ -249,7 +249,7 @@ class CarController(CarControllerBase):
       if self.frame % 20 == 0 or send_ui:
         can_sends.append(toyotacan.create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                                      hud_control.rightLaneVisible, hud_control.leftLaneDepart,
-                                                     hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud, lat_active, CS.lkas_enabled))
+                                                     hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud, lat_active))
 
       if (self.frame % 100 == 0 or send_ui) and (self.CP.enableDsu or self.CP.flags & ToyotaFlags.DISABLE_RADAR.value):
         can_sends.append(toyotacan.create_fcw_command(self.packer, fcw_alert))

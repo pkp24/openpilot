@@ -204,7 +204,7 @@ class LongitudinalPlanner:
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
     # Compute model v_ego error
-    self.v_model_error = 0. if e2e_longitudinal_model else get_speed_error(sm['modelV2'], v_ego)
+    self.v_model_error = 0.0 if e2e_longitudinal_model else get_speed_error(sm['modelV2'], v_ego)
 
     if force_slow_decel:
       v_cruise = 0.0
@@ -270,15 +270,21 @@ class LongitudinalPlanner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
-    a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
+    a_target_mpc, should_stop_mpc = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
+
     if e2e_longitudinal_model and sm['controlsState'].experimentalMode:
       model_speeds = np.interp(CONTROL_N_T_IDX, ModelConstants.T_IDXS, sm['modelV2'].velocity.x)
       model_accels = np.interp(CONTROL_N_T_IDX, ModelConstants.T_IDXS, sm['modelV2'].acceleration.x)
       a_target_model, should_stop_model = get_accel_from_plan(self.CP, model_speeds, model_accels)
-      a_target = min(a_target, a_target_model)
-      should_stop |= should_stop_model
+      a_target = min(a_target_mpc, a_target_model)
+      should_stop = should_stop_mpc or should_stop_model
+    else:
+      a_target = a_target_mpc
+      should_stop = should_stop_mpc
+
     longitudinalPlan.aTarget = float(a_target)
     longitudinalPlan.shouldStop = bool(should_stop)
+
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
 
