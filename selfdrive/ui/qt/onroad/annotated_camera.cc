@@ -722,6 +722,9 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
   auto m = msg.initEvent().initUiDebug();
   m.setDrawTimeMillis(cur_draw_t - start_draw_t);
   pm->send("uiDebug", msg);
+
+  // Paint FrogPilot widgets
+  paintFrogPilotWidgets(painter);
 }
 
 void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
@@ -769,8 +772,6 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
 }
 
 void AnnotatedCameraWidget::updateFrogPilotWidgets(int alert_height, const UIScene &scene) {
-  QPainter painter(this);
-
   if (is_metric || useSI) {
     accelerationUnit = tr("m/s²");
     leadDistanceUnit = tr(mapOpen ? "m" : "meters");
@@ -789,11 +790,10 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(int alert_height, const UISce
     speedConversion = MS_TO_MPH;
   }
 
+  alertHeight = alert_height;
+
   alwaysOnLateralActive = scene.always_on_lateral_active;
   showAlwaysOnLateralStatusBar = scene.show_aol_status_bar;
-  if ((showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI) && !bigMapOpen) {
-    drawStatusBar(painter);
-  }
 
   blindSpotLeft = scene.blind_spot_left;
   blindSpotRight = scene.blind_spot_right;
@@ -835,9 +835,6 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(int alert_height, const UISce
   leadInfo = scene.lead_info;
   obstacleDistance = scene.obstacle_distance;
   obstacleDistanceStock = scene.obstacle_distance_stock;
-  if (leadInfo && !bigMapOpen) {
-    drawLeadInfo(painter);
-  }
 
   mapOpen = scene.map_open;
   bigMapOpen = mapOpen && scene.big_map;
@@ -876,9 +873,6 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(int alert_height, const UISce
   speedLimitChanged = speedLimitController && scene.speed_limit_changed;
   unconfirmedSpeedLimit = speedLimitController ? scene.unconfirmed_speed_limit : 0;
   useViennaSLCSign = scene.use_vienna_slc_sign;
-  if (speedLimitChanged) {
-    drawSLCConfirmation(painter);
-  }
 
   bool stoppedTimer = scene.stopped_timer && scene.standstill && scene.started_timer / UI_FREQ >= 10;
   if (stoppedTimer) {
@@ -895,14 +889,6 @@ void AnnotatedCameraWidget::updateFrogPilotWidgets(int alert_height, const UISce
 
   turnSignalLeft = scene.turn_signal_left;
   turnSignalRight = scene.turn_signal_right;
-  if (turnSignalAnimation && (turnSignalLeft || turnSignalRight) && !bigMapOpen) {
-    if (!animationTimer->isActive()) {
-      animationTimer->start(signalAnimationLength);
-    }
-    drawTurnSignals(alert_height, painter);
-  } else if (animationTimer->isActive()) {
-    animationTimer->stop();
-  }
 
   useSI = scene.use_si;
 
@@ -966,6 +952,29 @@ void AnnotatedCameraWidget::updateSignals() {
 
     totalFrames = 0;
     turnSignalAnimation = false;
+  }
+}
+
+void AnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &painter) {
+  if ((showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI) && !bigMapOpen) {
+    drawStatusBar(painter);
+  }
+
+  if (leadInfo && !bigMapOpen) {
+    drawLeadInfo(painter);
+  }
+
+  if (speedLimitChanged) {
+    drawSLCConfirmation(painter);
+  }
+
+  if (turnSignalAnimation && (turnSignalLeft || turnSignalRight) && !bigMapOpen) {
+    if (!animationTimer->isActive()) {
+      animationTimer->start(signalAnimationLength);
+    }
+    drawTurnSignals(painter);
+  } else if (animationTimer->isActive()) {
+    animationTimer->stop();
   }
 }
 
@@ -1327,13 +1336,13 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   p.restore();
 }
 
-void AnnotatedCameraWidget::drawTurnSignals(int alert_height, QPainter &p) {
+void AnnotatedCameraWidget::drawTurnSignals(QPainter &p) {
   p.setRenderHint(QPainter::Antialiasing);
 
   bool blindspotActive = turnSignalLeft ? blindSpotLeft : blindSpotRight;
 
   if (signalStyle == "static") {
-    int signalXPosition = turnSignalLeft ? rect().center().x() - 176 - signalWidth / 2 : rect().center().x() + 176 + signalWidth / 2;
+    int signalXPosition = turnSignalLeft ? rect().center().x() - 176 - signalWidth : rect().center().x() + signalWidth;
     int signalYPosition = signalHeight / 2;
 
     if (blindspotActive && !blindspotImages.empty()) {
@@ -1343,7 +1352,7 @@ void AnnotatedCameraWidget::drawTurnSignals(int alert_height, QPainter &p) {
     }
   } else if (signalStyle == "traditional") {
     int signalXPosition = turnSignalLeft ? width() - ((animationFrameIndex + 1) * signalWidth) : animationFrameIndex * signalWidth;
-    int signalYPosition = height() - (alert_height + signalHeight);
+    int signalYPosition = height() - (alertHeight + signalHeight);
 
     signalYPosition -= showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI ? statusBarHeight : 0;
 
