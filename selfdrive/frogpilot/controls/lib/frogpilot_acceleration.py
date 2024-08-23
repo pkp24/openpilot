@@ -60,7 +60,7 @@ class FrogPilotAcceleration:
       speed_to_max = self.frogpilot_planner.v_cruise - v_ego
       if speed_to_max < CRUISING_SPEED:
         self.max_accel -= (CRUISING_SPEED - speed_to_max - (2 if v_ego > CITY_SPEED_LIMIT else 1)) / CRUISING_SPEED
-      elif self.frogpilot_planner.tracking_lead:
+      elif self.frogpilot_planner.tracking_lead and self.frogpilot_planner.lead_one.dRel < CITY_SPEED_LIMIT * 2:
         self.max_accel = clip(self.frogpilot_planner.lead_one.aLeadK, get_max_accel_sport_plus(v_ego), get_max_allowed_accel(v_ego))
       self.max_accel *= get_max_accel_offset(self.frogpilot_planner.v_cruise)
 
