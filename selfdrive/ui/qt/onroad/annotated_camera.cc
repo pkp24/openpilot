@@ -80,7 +80,7 @@ void AnnotatedCameraWidget::updateState(int alert_height, const UIState &s) {
   has_eu_speed_limit = (nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA) && !(speedLimitController && !useViennaSLCSign) || (speedLimitController && useViennaSLCSign);
   is_metric = s.scene.is_metric;
   speedUnit =  s.scene.is_metric ? tr("km/h") : tr("mph");
-  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE || turnSignalAnimation && (turnSignalLeft || turnSignalRight) || bigMapOpen);
+  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE || turnSignalAnimation && (turnSignalLeft || turnSignalRight) && signalStyle == "traditional" || bigMapOpen);
   status = s.status;
 
   // update engageability/experimental mode button
@@ -267,10 +267,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
       drawText(p, rect().center().x(), 290, QString("%1 seconds").arg(seconds));
     } else {
       p.setFont(InterFont(176, QFont::Bold));
-      QFontMetrics metrics(p.font());
-      speedTextWidth = metrics.boundingRect(speedStr).width();
       drawText(p, rect().center().x(), 210, speedStr);
       p.setFont(InterFont(66));
+      QFontMetrics metrics(p.font());
+      speedTextWidth = metrics.boundingRect(speedUnit).width();
       drawText(p, rect().center().x(), 290, speedUnit, 200);
     }
   }
@@ -527,7 +527,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   } else if (onroadDistanceButton) {
     x += 250;
   }
-  offset += showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI ? 25 : 0;
+  offset += statusBarHeight / 2;
   int y = height() - offset;
   float opacity = dmActive ? 0.65 : 0.2;
   drawIcon(painter, QPoint(x, y), dm_img, blackColor(70), opacity);
@@ -901,20 +901,12 @@ void AnnotatedCameraWidget::updateSignals() {
   blindspotImages.clear();
   regularImages.clear();
 
-  QString signalFolderPath = "../frogpilot/assets/active_theme/signals/";
+  const QString signalFolderPath = "../frogpilot/assets/active_theme/signals/";
   QDir directory(signalFolderPath);
 
   QFileInfoList fileList = directory.entryInfoList({"turn_signal_*.png"}, QDir::Files);
-  QFileInfoList nonPngFileList = directory.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
-  for (int i = 0; i < nonPngFileList.size(); i++) {
-    if (nonPngFileList[i].suffix() == "png") {
-      nonPngFileList.removeAt(i);
-      --i;
-    }
-  }
 
-  QTransform flipTransform;
-  flipTransform.scale(-1, 1);
+  const QTransform flipTransform = QTransform().scale(-1, 1);
   std::vector<QPixmap> flippedImages;
 
   for (const QFileInfo &fileInfo : fileList) {
@@ -931,10 +923,19 @@ void AnnotatedCameraWidget::updateSignals() {
 
   regularImages.insert(regularImages.end(), flippedImages.begin(), flippedImages.end());
 
+  QFileInfoList nonPngFileList = directory.entryInfoList(QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+
+  for (QFileInfoList::iterator it = nonPngFileList.begin(); it != nonPngFileList.end(); ) {
+    if ((*it).suffix() == "png") {
+      it = nonPngFileList.erase(it);
+    } else {
+      it++;
+    }
+  }
+
   if (!nonPngFileList.isEmpty()) {
-    QFileInfo fileInfo = nonPngFileList.first();
-    QString fileName = fileInfo.fileName();
-    QStringList parts = fileName.split('_');
+    const QFileInfo &fileInfo = nonPngFileList.first();
+    const QStringList parts = fileInfo.fileName().split('_');
 
     if (parts.size() == 2) {
       signalStyle = parts[0];
@@ -943,8 +944,9 @@ void AnnotatedCameraWidget::updateSignals() {
   }
 
   if (!regularImages.empty()) {
-    signalWidth = regularImages.front().width();
-    signalHeight = regularImages.front().height();
+    const QPixmap &firstImage = regularImages.front();
+    signalWidth = firstImage.width();
+    signalHeight = firstImage.height();
 
     totalFrames = regularImages.size() / 2;
     turnSignalAnimation = true;
@@ -960,6 +962,8 @@ void AnnotatedCameraWidget::updateSignals() {
 void AnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &painter) {
   if ((showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI) && !bigMapOpen) {
     drawStatusBar(painter);
+  } else {
+    statusBarHeight = 0;
   }
 
   if (leadInfo && !bigMapOpen) {
@@ -1268,7 +1272,7 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
     {6, tr("Experimental Mode manually activated")},
     {7, tr("Experimental Mode activated for %1").arg(mapOpen ? tr("low speed") : tr("speed being less than %1 %2").arg(conditionalSpeedLead).arg(is_metric ? tr("kph") : tr("mph")))},
     {8, tr("Experimental Mode activated for %1").arg(mapOpen ? tr("low speed") : tr("speed being less than %1 %2").arg(conditionalSpeed).arg(is_metric ? tr("kph") : tr("mph")))},
-    {9, tr("Experimental Mode activated for turn") + (mapOpen ? "" : tr(" / lane change"))},
+    {9, tr("Experimental Mode activated for turn") + (mapOpen ? " signal" : tr(" / lane change"))},
     {10, tr("Experimental Mode activated for intersection")},
     {11, tr("Experimental Mode activated for upcoming turn")},
     {12, tr("Experimental Mode activated for curve")},
@@ -1344,8 +1348,8 @@ void AnnotatedCameraWidget::drawTurnSignals(QPainter &p) {
   bool blindspotActive = turnSignalLeft ? blindSpotLeft : blindSpotRight;
 
   if (signalStyle == "static") {
-    int signalXPosition = turnSignalLeft ? rect().center().x() - speedTextWidth - signalWidth : rect().center().x() + signalWidth;
-    int signalYPosition = signalHeight / 2;
+    int signalXPosition = turnSignalLeft ? rect().center().x() - std::max(signalWidth, speedTextWidth) - signalWidth + (mapOpen ? UI_BORDER_SIZE : 0) : rect().center().x() + signalWidth;
+    int signalYPosition = signalHeight;
 
     if (blindspotActive && !blindspotImages.empty()) {
       p.drawPixmap(signalXPosition, signalYPosition, signalWidth, signalHeight, blindspotImages[turnSignalLeft ? 0 : 1]);
@@ -1354,9 +1358,9 @@ void AnnotatedCameraWidget::drawTurnSignals(QPainter &p) {
     }
   } else if (signalStyle == "traditional") {
     int signalXPosition = turnSignalLeft ? width() - ((animationFrameIndex + 1) * signalWidth) : animationFrameIndex * signalWidth;
-    int signalYPosition = height() - (alertHeight + signalHeight);
+    int signalYPosition = height() - signalHeight;
 
-    signalYPosition -= showAlwaysOnLateralStatusBar || showConditionalExperimentalStatusBar || roadNameUI ? statusBarHeight : 0;
+    signalYPosition -= fmax(alertHeight, statusBarHeight);
 
     if (blindspotActive && !blindspotImages.empty()) {
       p.drawPixmap(turnSignalLeft ? width() - signalWidth : 0, signalYPosition, signalWidth, signalHeight, blindspotImages[turnSignalLeft ? 0 : 1]);
