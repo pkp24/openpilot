@@ -86,6 +86,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(alertVolumeControlKeys.find(key.c_str()) != alertVolumeControlKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = alertVolumeControlToggle;
@@ -102,6 +103,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(bonusContentKeys.find(key.c_str()) != bonusContentKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = BonusContentToggle;
@@ -112,6 +114,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(personalizeOpenpilotKeys.find(key.c_str()) != personalizeOpenpilotKeys.end());
         }
+
         openSubParentToggle();
       });
       visualToggle = personalizeOpenpilotToggle;
@@ -773,8 +776,8 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
       std::vector<QString> startupAlertOptions{tr("STOCK"), tr("FROGPILOT"), tr("CUSTOM"), tr("CLEAR")};
       FrogPilotButtonsControl *startupAlertButton = new FrogPilotButtonsControl(title, desc, icon, startupAlertOptions);
       QObject::connect(startupAlertButton, &FrogPilotButtonsControl::buttonClicked, [=](int id) {
-        int maxLengthTop = 40;
-        int maxLengthBottom = 50;
+        int maxLengthTop = 35;
+        int maxLengthBottom = 45;
 
         QString stockTop = "Be ready to take over at any time";
         QString stockBottom = "Always keep hands on wheel and eyes on road";
@@ -819,6 +822,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 
           toggle->setVisible(modifiedCustomAlertsKeys.find(key.c_str()) != modifiedCustomAlertsKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = customAlertsToggle;
@@ -829,6 +833,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(customOnroadUIKeys.find(key.c_str()) != customOnroadUIKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = customUIToggle;
@@ -863,6 +868,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 
           toggle->setVisible(modifiedDeveloperUIKeys.find(key.c_str()) != modifiedDeveloperUIKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = developerUIToggle;
@@ -918,6 +924,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
 
           toggle->setVisible(modifiedModelUIKeysKeys.find(key.c_str()) != modifiedModelUIKeysKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = modelUIToggle;
@@ -934,6 +941,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(qolKeys.find(key.c_str()) != qolKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = qolToggle;
@@ -988,6 +996,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(SettingsWindow *parent) : FrogPilot
         for (auto &[key, toggle] : toggles) {
           toggle->setVisible(screenKeys.find(key.c_str()) != screenKeys.end());
         }
+
         openParentToggle();
       });
       visualToggle = screenToggle;
