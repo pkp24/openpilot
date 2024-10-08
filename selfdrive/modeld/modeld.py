@@ -7,6 +7,7 @@ import cereal.messaging as messaging
 from cereal import car, log
 from pathlib import Path
 from setproctitle import setproctitle
+from types import SimpleNamespace
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
@@ -24,6 +25,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
+from openpilot.selfdrive.frogpilot.frogpilot_functions import MODELS_PATH
 from openpilot.selfdrive.frogpilot.frogpilot_variables import FrogPilotVariables
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -53,7 +55,12 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
   model: ModelRunner
 
-  def __init__(self, context: CLContext):
+  def __init__(self, context: CLContext, frogpilot_toggles: SimpleNamespace):
+    # FrogPilot variables
+    model_path = Path(__file__).parent / f'{MODELS_PATH}/{frogpilot_toggles.model}.thneed'
+    if model_path.exists():
+      MODEL_PATHS[ModelRunner.THNEED] = model_path
+
     self.frame = ModelFrame(context)
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
@@ -143,7 +150,7 @@ def main(demo=False):
   cloudlog.warning("setting up CL context")
   cl_context = CLContext()
   cloudlog.warning("CL context ready; loading model")
-  model = ModelState(cl_context)
+  model = ModelState(cl_context, frogpilot_toggles)
   cloudlog.warning("models loaded, modeld starting")
 
   # visionipc clients
