@@ -14,6 +14,7 @@ FrogPilotButtonType = custom.FrogPilotCarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType
 
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -28,6 +29,10 @@ class CarInterface(CarInterfaceBase):
     # BRAKE_MODULE is on a different address for these cars
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
+
+    if ret.flags & ToyotaFlags.SECOC.value:
+      ret.secOcRequired = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_SECOC
 
     if candidate in ANGLE_CONTROL_CAR:
       ret.steerControlType = SteerControlType.angle
@@ -57,7 +62,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
                                         and not (ret.flags & ToyotaFlags.SMART_DSU)
 
-    if candidate == CAR.LEXUS_ES_TSS2 and Ecu.hybrid not in found_ecus:
+    if candidate in (CAR.LEXUS_ES_TSS2,) and Ecu.hybrid not in found_ecus:
       ret.flags |= ToyotaFlags.RAISED_ACCEL_LIMIT.value
 
     if candidate == CAR.TOYOTA_PRIUS:
@@ -73,7 +78,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       ret.wheelSpeedFactor = 1.035
 
-    elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023):
+    elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023, CAR.TOYOTA_RAV4_PRIME, CAR.TOYOTA_SIENNA_4TH_GEN):
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
@@ -106,6 +111,10 @@ class CarInterface(CarInterfaceBase):
     if candidate in (RADAR_ACC_CAR | NO_DSU_CAR):
       ret.experimentalLongitudinalAvailable = use_sdsu or candidate in RADAR_ACC_CAR
 
+      # Disabling radar is only supported on TSS2 radar-ACC cars
+      if experimental_long and candidate in RADAR_ACC_CAR:
+        ret.flags |= ToyotaFlags.DISABLE_RADAR.value
+
       if not use_sdsu:
         # Disabling radar is only supported on TSS2 radar-ACC cars
         if experimental_long and candidate in RADAR_ACC_CAR:
@@ -114,15 +123,19 @@ class CarInterface(CarInterfaceBase):
         use_sdsu = use_sdsu and experimental_long
 
     # openpilot longitudinal enabled by default:
-    #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
     #  - cars w/ DSU disconnected
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal behind experimental long toggle:
-    #  - TSS2 radar ACC cars w/ smartDSU installed
-    #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
-    #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+    #  - TSS2 radar ACC cars (disables radar)
+
+    if ret.flags & ToyotaFlags.SECOC.value:
+      ret.openpilotLongitudinalControl = False
+    else:
+      ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or \
+        candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
+        bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
     ret.openpilotLongitudinalControl &= not disable_openpilot_long
+
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
     ret.enableGasInterceptor = 0x201 in fingerprint[0] and ret.openpilotLongitudinalControl
 
@@ -136,26 +149,23 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if (candidate in STOP_AND_GO_CAR or ret.enableGasInterceptor) else MIN_ACC_SPEED
 
-    tune = ret.longitudinalTuning
-    if candidate in TSS2_CAR:
-      tune.kpV = [0.0]
-      tune.kiV = [0.5]
+    if ret.enableGasInterceptor:
+      tune = ret.longitudinalTuning
+      tune.deadzoneBP = [0., 9.]
+      tune.deadzoneV = [.0, .15]
+      tune.kpBP = [0., 5., 20.]
+      tune.kpV = [1.3, 1.0, 0.7]
+      tune.kiBP = [0., 5., 12., 20., 27.]
+      tune.kiV = [.35, .23, .20, .17, .1]
+
+    if params.get_bool("FrogsGoMoosTweak"):
+      ret.vEgoStopping = 0.15
+      ret.vEgoStarting = 0.15
+      ret.stoppingDecelRate = 0.1  # reach stopping target smoothly
+    elif candidate in TSS2_CAR:
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
-
-      # Since we compensate for imprecise acceleration in carcontroller, we can be less aggressive with tuning
-      # This also prevents unnecessary request windup due to internal car jerk limits
-      if ret.flags & ToyotaFlags.RAISED_ACCEL_LIMIT:
-        tune.kiV = [0.25]
-    else:
-      tune.kiBP = [0., 5., 35.]
-      tune.kiV = [3.6, 2.4, 1.5]
-
-    if params.get_bool("FrogsGoMoosTweak"):
-      ret.stoppingDecelRate = 0.1  # reach stopping target smoothly
-      ret.vEgoStopping = 0.15
-      ret.vEgoStarting = 0.15
 
     return ret
 
