@@ -126,7 +126,7 @@ def create_lfahda_mfc(packer, enabled, lat_active, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca, cruise_available):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca, CS, CP, cruise_available):
   commands = []
 
   scc11_values = {
@@ -187,7 +187,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
   return commands
 
-def create_acc_opt(packer):
+def create_acc_opt(packer, CS, CP):
   commands = []
 
   scc13_values = {
@@ -211,3 +211,4 @@ def create_frt_radar_opt(packer):
     "CF_FCA_Equip_Front_Radar": 1,
   }
   return packer.make_can_msg("FRT_RADAR11", 0, frt_radar11_values)
+
