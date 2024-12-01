@@ -58,7 +58,7 @@ class RadarInterface(RadarInterfaceBase):
     if rr is not None:
       radar_error = rr.errors
     if list(radar_error) and self.fp_radar_tracks:
-      return super().update(None)
+      return super().update(can_strings)
     return rr
 
   def _update(self, updated_messages):
