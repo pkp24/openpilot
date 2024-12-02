@@ -289,21 +289,6 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
-    if CP.flags & ToyotaFlags.SECOC.value:
-      messages += [
-        ("GEAR_PACKET_HYBRID", 60),
-        ("SECOC_SYNCHRONIZATION", 10),
-        ("GAS_PEDAL", 42),
-      ]
-    else:
-      messages.append(("VSC1S07", 20))
-      if CP.carFingerprint not in [CAR.TOYOTA_MIRAI]:
-        messages.append(("ENGINE_RPM", 42))
-
-      messages += [
-        ("GEAR_PACKET", 1),
-      ]
-
     if CP.carFingerprint in (TSS2_CAR - SECOC_CAR - {CAR.LEXUS_NX_TSS2, CAR.TOYOTA_ALPHARD_TSS2, CAR.LEXUS_IS_TSS2}):
       messages.append(("CLUTCH", 15))
 
