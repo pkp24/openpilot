@@ -102,6 +102,8 @@ class HyundaiFlags(IntFlag):
 
 
 class HyundaiFlagsFP(IntFlag):
+  FP_CAMERA_SCC_LEAD = 2 ** 6
+  FP_LKAS12 = 2 ** 7
   FP_RADAR_TRACKS = 2 ** 8
 
 

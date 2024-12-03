@@ -4,7 +4,7 @@ from cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
-from openpilot.selfdrive.car.hyundai.values import DBC, HyundaiFlags, HyundaiFlagsFP, CANFD_CAR
+from openpilot.selfdrive.car.hyundai.values import DBC, HyundaiFlagsFP, CANFD_CAR
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
@@ -14,11 +14,14 @@ RADAR_MSG_COUNT = 32
 def get_radar_can_parser(CP):
   if DBC[CP.carFingerprint]['radar'] is None:
     if CP.carFingerprint in CANFD_CAR:
-      if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      if CP.fpflags & HyundaiFlagsFP.FP_CAMERA_SCC_LEAD:
         lead_src, bus = "SCC_CONTROL", CanBus(CP).CAM
       else:
         return None
     else:
+      if CP.fpFlags & HyundaiFlagsFP.FP_CAMERA_SCC_LEAD:
+        lead_src, bus = "SCC11", 2
+      else:
         return None
     messages = [(lead_src, 50)]
     return CANParser(DBC[CP.carFingerprint]['pt'], messages, bus)
@@ -31,9 +34,11 @@ class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.CP = CP
-    self.camera_scc = CP.flags & HyundaiFlags.CANFD_CAMERA_SCC
+    self.camera_scc = CP.fpflags & HyundaiFlagsFP.FP_CAMERA_SCC_LEAD
     self.updated_messages = set()
-    self.trigger_msg = 0x1A0 if self.camera_scc else (RADAR_START_ADDR + RADAR_MSG_COUNT - 1)
+    self.trigger_msg = 0x1A0 if self.camera_scc and CP.carFingerprint in CANFD_CAR else \
+                       0x420 if self.camera_scc else \
+                       (RADAR_START_ADDR + RADAR_MSG_COUNT - 1)
     self.track_id = 0
 
     self.radar_off_can = CP.radarUnavailable
@@ -73,9 +78,11 @@ class RadarInterface(RadarInterfaceBase):
     ret.errors = errors
 
     if self.camera_scc:
-      msg_src = "SCC_CONTROL"
+      msg_src = "SCC_CONTROL" if self.CP.carFingerprint in CANFD_CAR else \
+                "SCC11"
       msg = self.rcp.vl[msg_src]
-      valid = msg['ACC_ObjDist'] < 204.6
+      valid = msg['ACC_ObjDist'] < 204.6 if self.CP.carFingerprint in CANFD_CAR else \
+              msg['ACC_ObjStatus']
       for ii in range(1):
         if valid:
           if ii not in self.pts:

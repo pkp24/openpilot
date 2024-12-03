@@ -126,7 +126,8 @@ def create_lfahda_mfc(packer, enabled, lat_active, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca, CS, CP, cruise_available):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed,
+                        stopping, long_override, use_fca, CS, CP, lead_distance, cruise_available):
   commands = []
 
   scc11_values = {
@@ -167,7 +168,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
     "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
     "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-    "ObjGap": 2 if hud_control.leadVisible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
+    "ObjGap": get_object_gap(lead_distance), # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
@@ -175,12 +176,18 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
   if use_fca:
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
-    fca11_values = {
-      "CR_FCA_Alive": idx % 0xF,
-      "PAINT1_Status": 1,
-      "FCA_DrvSetStatus": 1,
-      "FCA_Status": 1,  # AEB disabled
-    }
+    if CP.flags & HyundaiFlags.CAMERA_SCC:
+      fca11_values = CS.fca11
+      fca11_values["PAINT1_Status"] = 1
+      fca11_values["FCA_DrvSetStatus"] = 1
+      fca11_values["FCA_Status"] = 1  # AEB disabled, until a route with AEB or FCW trigger is verified
+    else:
+      fca11_values = {
+        "CR_FCA_Alive": idx % 0xF,
+        "PAINT1_Status": 1,
+        "FCA_DrvSetStatus": 1,
+        "FCA_Status": 1,  # AEB disabled
+      }
     fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
     fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
     commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
@@ -191,17 +198,22 @@ def create_acc_opt(packer, CS, CP):
   commands = []
 
   scc13_values = {
-    "SCCDrvModeRValue": 2,
+    "SCCDrvModeRValue": 3,
     "SCC_Equip": 1,
     "Lead_Veh_Dep_Alert_USM": 2,
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
   # TODO: this needs to be detected and conditionally sent on unsupported long cars
-  fca12_values = {
-    "FCA_DrvSetState": 2,
-    "FCA_USM": 1, # AEB disabled
-  }
+  if CP.flags & HyundaiFlags.CAMERA_SCC:
+    fca12_values = CS.fca12
+    fca12_values["FCA_DrvSetState"] = 2
+    fca12_values["FCA_USM"] = 1 # AEB disabled
+  else:
+    fca12_values = {
+      "FCA_DrvSetState": 2,
+      "FCA_USM": 1, # AEB disabled
+    }
   commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 
   return commands
@@ -212,3 +224,23 @@ def create_frt_radar_opt(packer):
   }
   return packer.make_can_msg("FRT_RADAR11", 0, frt_radar11_values)
 
+def get_object_gap(lead_distance: float) -> int:
+  if lead_distance <= 0:
+    return 0
+
+  # Define distance ranges and corresponding values.
+  ranges = [(30, 5),
+            (25, 4),
+            (20, 3),
+            (0,  2)]
+
+  # The next function scans through 'ranges' in ascending order,
+  # returning the associated distance range for the first range
+  # whose lower bound is exceeded by lead_distance.
+  #
+  # If lead_distance does not exceed any bounds, it defaults to 0 (no lead).
+  #
+  # For example: if lead_distance is 22, then 3 (20-25 m) is returned.
+  # This is because 22 is greater than the lower bound of this range (20),
+  # but does not exceed the next range's lower bound (25).
+  return next((gap for dist, gap in ranges if lead_distance > dist), 0)

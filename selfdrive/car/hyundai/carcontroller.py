@@ -69,6 +69,18 @@ class CarController(CarControllerBase):
       self.sm = messaging.SubMaster(sub_services)
 
     self.param_s = Params()
+    self.lead_distance = 0
+
+  def calculate_lead_distance(self, hud_control: car.CarControl.HUDControl) -> float:
+    lead_one = self.sm["radarState"].leadOne
+    lead_two = self.sm["radarState"].leadTwo
+
+    if lead_one.status and (not lead_two.status or lead_one.dRel < lead_two.dRel):
+      return lead_one.dRel
+    if lead_two.status:
+      return lead_two.dRel
+
+    return 19 if hud_control.leadVisible else 0
 
   def update(self, CC, CS, now_nanos, frogpilot_toggles):
     actuators = CC.actuators
@@ -159,6 +171,9 @@ class CarController(CarControllerBase):
       if not self.CP.openpilotLongitudinalControl:
         can_sends.extend(self.create_button_messages(CC, CS, use_clu11=True))
 
+      if self.CP.openpilotLongitudinalControl and self.sm.updated['radarState'] and self.frame % 5 == 0:
+        self.lead_distance = self.calculate_lead_distance(hud_control)
+
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         # TODO: unclear if this is needed
@@ -166,7 +181,7 @@ class CarController(CarControllerBase):
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
                                                         hud_control, set_speed_in_units, stopping,
-                                                        CC.cruiseControl.override, use_fca, CS, self.CP, CS.out.cruiseState.available))
+                                                        CC.cruiseControl.override, use_fca, CS, self.CP, self.lead_distance, CS.out.cruiseState.available))
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:

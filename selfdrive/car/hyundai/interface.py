@@ -82,7 +82,7 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.USE_FCA.value
 
       if 0x53E in fingerprint[2]:
-        ret.flags |= HyundaiFlags.LKAS12.value
+        ret.fpflags |= HyundaiFlagsFP.FP_LKAS12.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
@@ -93,6 +93,8 @@ class CarInterface(CarInterfaceBase):
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
+      if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC and not hda2:
+        ret.fpFlags |= HyundaiFlagsFP.FP_CAMERA_SCC_LEAD.value
       if not use_new_api:
         ret.longitudinalTuning.deadzoneBP = [0.]
         ret.longitudinalTuning.deadzoneV = [0.]
@@ -100,6 +102,8 @@ class CarInterface(CarInterfaceBase):
         ret.longitudinalTuning.kiV = [0.0]
       ret.experimentalLongitudinalAvailable = candidate not in (CANFD_UNSUPPORTED_LONGITUDINAL_CAR | CANFD_RADAR_SCC_CAR)
     else:
+      if candidate in CAMERA_SCC_CAR:
+        ret.fpFlags |= HyundaiFlagsFP.FP_CAMERA_SCC_LEAD.value
       if not use_new_api:
         ret.longitudinalTuning.deadzoneBP = [0.]
         ret.longitudinalTuning.deadzoneV = [0.]
@@ -112,7 +116,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startingState = True
     ret.vEgoStarting = 0.1
-    ret.startAccel = 1.5
+    ret.startAccel = 1.6
     ret.longitudinalActuatorDelay = 0.5
 
     if ret.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
@@ -122,6 +126,10 @@ class CarInterface(CarInterfaceBase):
       ret.startingState = True
       ret.stopAccel = -1.0
 
+    if DBC[ret.carFingerprint]["radar"] is None:
+      if ret.fpFlags & (HyundaiFlagsFP.FP_CAMERA_SCC_LEAD):
+        ret.radarTimeStep = 0.02
+        ret.radarUnavailable = False
     # *** feature detection ***
     if candidate in CANFD_CAR:
       ret.enableBsm = 0x1e5 in fingerprint[CAN.ECAN]
@@ -189,7 +197,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    if CP.openpilotLongitudinalControl and not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value)  and \
+    if CP.openpilotLongitudinalControl and not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and \
       CP.carFingerprint not in CAMERA_SCC_CAR:
       addr, bus = 0x7d0, CanBus(CP).ECAN if CP.carFingerprint in CANFD_CAR else 0
       if CP.flags & HyundaiFlags.CANFD_HDA2.value:

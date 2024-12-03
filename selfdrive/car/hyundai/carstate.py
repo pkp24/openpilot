@@ -7,7 +7,7 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
-from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, \
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, HyundaiFlagsFP, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, \
                                                    CANFD_CAR, Buttons, CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
@@ -177,6 +177,10 @@ class CarState(CarStateBase):
     # save the entire LKAS11 and CLU11
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
+    # only forward FCA for FCW/AEB when using OPLong on Camera SCC
+    if self.CP.openpilotLongitudinalControl and self.CP.carFingerprint in CAMERA_SCC_CAR:
+      self.fca11 = copy.copy(cp_cruise.vl["FCA11"])
+      self.fca12 = copy.copy(cp_cruise.vl["FCA12"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
@@ -381,6 +385,13 @@ class CarState(CarStateBase):
 
       if CP.flags & HyundaiFlags.USE_FCA.value:
         messages.append(("FCA11", 50))
+
+    if CP.openpilotLongitudinalControl and CP.carFingerprint in CAMERA_SCC_CAR:
+      if CP.flags & HyundaiFlags.USE_FCA.value:
+        messages += [
+          ("FCA11", 50),
+          ("FCA12", 50),
+        ]
 
     if CP.flags & HyundaiFlags.LKAS12:
       messages.append(("LKAS12", 10))

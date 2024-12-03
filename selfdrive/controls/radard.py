@@ -13,7 +13,7 @@ from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_real
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
-from openpilot.selfdrive.car.hyundai.values import HyundaiFlags
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlagsFP
 from openpilot.selfdrive.frogpilot.frogpilot_variables import get_frogpilot_toggles
 
 # Default lead acceleration decay set to 50% at 1s
@@ -94,7 +94,7 @@ class Track:
     self.aLeadTau = aLeadTau
 
   def get_RadarState(self, CP: car.CarParams = None, lead_msg_y: float = 0.0, model_prob: float = 0.0):
-    y_rel_vision = False if CP is None or CP.carName != "hyundai" else CP.flags & HyundaiFlags.CANFD_CAMERA_SCC
+    y_rel_vision = False if CP is None or CP.carName != "hyundai" else CP.fpflags & HyundaiFlagsFP.FP_CAMERA_SCC_LEAD
     return {
       "dRel": float(self.dRel),
       "yRel": float(-lead_msg_y) if y_rel_vision else float(self.yRel),
