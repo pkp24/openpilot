@@ -82,7 +82,7 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.USE_FCA.value
 
       if 0x53E in fingerprint[2]:
-        ret.fpflags |= HyundaiFlagsFP.FP_LKAS12.value
+        ret.fpFlags |= HyundaiFlagsFP.FP_LKAS12.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
