@@ -11,7 +11,7 @@ on:
         description: 'Branch to remove commit from'
         required: true
         type: string
-        default: 'FP-Staging'
+        default: 'main'
 
 jobs:
   remove-commit:
@@ -34,7 +34,7 @@ jobs:
             echo "Error: Commit ID does not exist"
             exit 1
           fi
-          git rebase -p --onto ${{ github.event.inputs.commit_id }}^ ${{ github.event.inputs.commit_id }}
+          git rebase --rebase-merges --onto ${{ github.event.inputs.commit_id }}^ ${{ github.event.inputs.commit_id }}
 
       - name: Push changes
         run: |
