@@ -272,6 +272,8 @@ class PlatformConfig(Freezable):
 
   flags: int = 0
 
+  fpFlags: int = 0
+
   platform_str: str | None = None
 
   def __hash__(self) -> int:
@@ -315,3 +317,11 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
   @classmethod
   def with_flags(cls, flags: IntFlag) -> set['Platforms']:
     return {p for p in cls if p.config.flags & flags}
+
+  @classmethod
+  def with_fp_flags(cls, fpFlags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if p.config.fpFlags & fpFlags}
+
+  @classmethod
+  def without_fp_flags(cls, fpFlags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if not (p.config.fpFlags & fpFlags)}

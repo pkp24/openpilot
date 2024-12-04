@@ -88,6 +88,7 @@ frogpilot_default_params: list[tuple[str, bool | bytes | int | float | str]] = [
   ("BlindSpotMetrics", 1),
   ("BlindSpotPath", 1),
   ("BorderMetrics", 1),
+  ("BrakeSignal", 1),
   ("CameraView", 3),
   ("CarMake", ""),
   ("CarModel", ""),
@@ -372,6 +373,7 @@ class FrogPilotVariables:
         car_model = CP.carFingerprint
         has_auto_tune = (car_model == "hyundai" or car_model == "toyota") and CP.lateralTuning.which == "torque"
         has_bsm = CP.enableBsm
+        has_pedal = CP.enableGasInterceptor
         has_radar = not CP.radarUnavailable
         is_pid_car = CP.lateralTuning.which == "pid"
         max_acceleration_enabled = key == "CarParams" and CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX
@@ -383,6 +385,7 @@ class FrogPilotVariables:
       car_model = "mock"
       has_auto_tune = False
       has_bsm = False
+      has_pedal = False
       has_radar = False
       is_pid_car = False
       max_acceleration_enabled = False
@@ -632,6 +635,7 @@ class FrogPilotVariables:
 
     toggle.old_long_api = openpilot_longitudinal and car_make == "gm" and not params.get_bool("NewLongAPIGM")
     toggle.old_long_api |= openpilot_longitudinal and car_make == "hyundai" and not params.get_bool("NewLongAPI")
+    toggle.old_long_api |= openpilot_longitudinal and car_make == "toyota" and has_pedal
 
     toggle.personalize_openpilot = params.get_bool("PersonalizeOpenpilot")
     toggle.color_scheme = params.get("CustomColors", encoding='utf-8') if toggle.personalize_openpilot else "stock"
@@ -665,6 +669,8 @@ class FrogPilotVariables:
     toggle.stopped_timer = toggle.quality_of_life_visuals and params.get_bool("StoppedTimer")
 
     toggle.rainbow_path = params.get_bool("RainbowPath")
+
+    toggle.brake_signal= params.get_bool("BrakeSignal")
 
     toggle.random_events = params.get_bool("RandomEvents")
 
@@ -933,6 +939,8 @@ class FrogPilotVariables:
       toggle.stopped_timer = bool(toggle.quality_of_life_visuals and self.default_frogpilot_toggles.StoppedTimer)
 
       toggle.rainbow_path = bool(self.default_frogpilot_toggles.RainbowPath)
+
+      toggle.brake_signal = bool(self.default_frogpilot_toggles.BrakeSignal)
 
       toggle.random_events = bool(self.default_frogpilot_toggles.RandomEvents)
 
