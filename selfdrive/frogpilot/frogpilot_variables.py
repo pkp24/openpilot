@@ -669,7 +669,9 @@ class FrogPilotVariables:
     toggle.stopped_timer = toggle.quality_of_life_visuals and params.get_bool("StoppedTimer")
 
     toggle.rainbow_path = params.get_bool("RainbowPath")
+
     toggle.brake_signal= params.get_bool("BrakeSignal")
+
     toggle.random_events = params.get_bool("RandomEvents")
 
     toggle.screen_management = params.get_bool("ScreenManagement")
@@ -937,7 +939,9 @@ class FrogPilotVariables:
       toggle.stopped_timer = bool(toggle.quality_of_life_visuals and self.default_frogpilot_toggles.StoppedTimer)
 
       toggle.rainbow_path = bool(self.default_frogpilot_toggles.RainbowPath)
+
       toggle.brake_signal = bool(self.default_frogpilot_toggles.BrakeSignal)
+
       toggle.random_events = bool(self.default_frogpilot_toggles.RandomEvents)
 
       toggle.screen_management = bool(self.default_frogpilot_toggles.ScreenManagement)

@@ -149,6 +149,7 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if (candidate in STOP_AND_GO_CAR or ret.enableGasInterceptor) else MIN_ACC_SPEED
 
+
     if ret.enableGasInterceptor:
       tune = ret.longitudinalTuning
       tune.deadzoneBP = [0., 9.]
@@ -157,6 +158,7 @@ class CarInterface(CarInterfaceBase):
       tune.kpV = [1.3, 1.0, 0.7]
       tune.kiBP = [0., 5., 12., 20., 27.]
       tune.kiV = [.35, .23, .20, .17, .1]
+
 
     if params.get_bool("FrogsGoMoosTweak"):
       ret.vEgoStopping = 0.15
