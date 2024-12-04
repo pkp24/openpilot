@@ -27,15 +27,23 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # Ensure that pull.rebase is not set to 'preserve'
+          git config --global pull.rebase merges
 
       - name: Remove commit
         run: |
-          if ! git rev-parse --verify ${{ github.event.inputs.commit_id }} >/dev/null 2>&1; then
-            echo "Error: Commit ID does not exist"
+          COMMIT_ID=${{ github.event.inputs.commit_id }}
+          TARGET_BRANCH=${{ github.event.inputs.target_branch }}
+
+          # Verify that the commit exists
+          if ! git rev-parse --verify "$COMMIT_ID" >/dev/null 2>&1; then
+            echo "Error: Commit ID $COMMIT_ID does not exist"
             exit 1
           fi
-          git rebase --rebase-merges --onto ${{ github.event.inputs.commit_id }}^ ${{ github.event.inputs.commit_id }}
+
+          # Perform the rebase to remove the specified commit
+          git rebase --rebase-merges --onto "$COMMIT_ID"^ "$COMMIT_ID"
 
       - name: Push changes
         run: |
-          git push --force origin ${{ github.event.inputs.target_branch }}
+          git push --force origin "$TARGET_BRANCH" 
