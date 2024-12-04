@@ -27,13 +27,15 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          # Ensure that pull.rebase is not set to 'preserve'
+          # Set pull.rebase to 'merges' to avoid deprecated 'preserve'
           git config --global pull.rebase merges
 
       - name: Remove commit
         run: |
           COMMIT_ID=${{ github.event.inputs.commit_id }}
           TARGET_BRANCH=${{ github.event.inputs.target_branch }}
+
+          echo "Attempting to remove commit ID: $COMMIT_ID from branch: $TARGET_BRANCH"
 
           # Verify that the commit exists
           if ! git rev-parse --verify "$COMMIT_ID" >/dev/null 2>&1; then
