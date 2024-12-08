@@ -202,6 +202,7 @@ typedef struct UIScene {
   bool show_blind_spot;
   bool show_fps;
   bool show_speed_limit_offset;
+  bool show_speed_limits;
   bool show_stopping_point;
   bool show_stopping_point_metrics;
   bool sidebar_metrics;
@@ -325,6 +326,7 @@ signals:
   // FrogPilot signals
   void driveRated();
   void reviewModel();
+  void themeUpdated();
 
 private slots:
   void update();
@@ -385,3 +387,4 @@ void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
 
 // FrogPilot functions
 void ui_update_frogpilot_params(UIState *s);
+void ui_update_theme(UIState *s);

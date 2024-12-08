@@ -12,7 +12,7 @@ from openpilot.common.params_pyx import Params, ParamKeyType, UnknownKeyName
 from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import HARDWARE
 
-from openpilot.selfdrive.frogpilot.assets.theme_manager import HOLIDAY_THEME_PATH, update_theme_asset, update_wheel_image
+from openpilot.selfdrive.frogpilot.assets.theme_manager import HOLIDAY_THEME_PATH
 from openpilot.selfdrive.frogpilot.frogpilot_utilities import copy_if_exists, run_cmd
 from openpilot.selfdrive.frogpilot.frogpilot_variables import MODELS_PATH, THEME_SAVE_PATH, params
 
@@ -205,37 +205,31 @@ def setup_frogpilot(build_metadata):
   frog_color_destination = os.path.join(THEME_SAVE_PATH, "theme_packs/frog/colors")
   if not os.path.exists(frog_color_destination):
     copy_if_exists(frog_color_source, frog_color_destination)
-  update_theme_asset("colors", "world_frog_day", "world_frog_day")
 
   frog_distance_icon_source = os.path.join(HOLIDAY_THEME_PATH, "world_frog_day", "distance_icons")
   frog_distance_icon_destination = os.path.join(THEME_SAVE_PATH, "distance_icons/frog-animated")
   if not os.path.exists(frog_distance_icon_destination):
     copy_if_exists(frog_distance_icon_source, frog_distance_icon_destination)
-  update_theme_asset("distance_icons", "world_frog_day", "world_frog_day")
 
   frog_icon_source = os.path.join(HOLIDAY_THEME_PATH, "world_frog_day", "icons")
   frog_icon_destination = os.path.join(THEME_SAVE_PATH, "theme_packs/frog-animated/icons")
   if not os.path.exists(frog_icon_destination):
     copy_if_exists(frog_icon_source, frog_icon_destination)
-  update_theme_asset("icons", "world_frog_day", "world_frog_day")
 
   frog_signal_source = os.path.join(HOLIDAY_THEME_PATH, "world_frog_day", "signals")
   frog_signal_destination = os.path.join(THEME_SAVE_PATH, "theme_packs/frog/signals")
   if not os.path.exists(frog_signal_destination):
     copy_if_exists(frog_signal_source, frog_signal_destination)
-  update_theme_asset("signals", "world_frog_day", "world_frog_day")
 
   frog_sound_source = os.path.join(HOLIDAY_THEME_PATH, "world_frog_day", "sounds")
   frog_sound_destination = os.path.join(THEME_SAVE_PATH, "theme_packs/frog/sounds")
   if not os.path.exists(frog_sound_destination):
     copy_if_exists(frog_sound_source, frog_sound_destination)
-  update_theme_asset("sounds", "world_frog_day", "world_frog_day")
 
   frog_steering_wheel_source = os.path.join(HOLIDAY_THEME_PATH, "world_frog_day", "steering_wheel")
   frog_steering_wheel_destination = os.path.join(THEME_SAVE_PATH, "steering_wheels")
   if not os.path.exists(frog_steering_wheel_destination):
     copy_if_exists(frog_steering_wheel_source, frog_steering_wheel_destination, single_file_name="frog.png")
-  update_wheel_image("world_frog_day", "world_frog_day", random_event=False)
 
   run_cmd(["sudo", "mount", "-o", "remount,rw", "/"], "File system remounted as read-write.", "Failed to remount file system.")
 

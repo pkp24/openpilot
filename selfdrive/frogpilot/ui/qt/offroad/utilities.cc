@@ -42,15 +42,10 @@ UtilitiesPanel::UtilitiesPanel(FrogPilotSettingsWindow *parent) : FrogPilotListW
 
   ButtonControl *resetTogglesBtn = new ButtonControl(tr("Reset Toggles to Default"), tr("RESET"), tr("Reset your toggle settings back to their default settings."));
   QObject::connect(resetTogglesBtn, &ButtonControl::clicked, [=]() {
-    QDir persistParamsDir("/persist/params");
-
     if (ConfirmationDialog::confirm(tr("Are you sure you want to completely reset all of your toggle settings?"), tr("Reset"), this)) {
       std::thread([=]() mutable {
         resetTogglesBtn->setEnabled(false);
         resetTogglesBtn->setValue(tr("Resetting..."));
-
-        persistParamsDir.removeRecursively();
-        persistParamsDir.mkpath(".");
 
         params.putBool("DoToggleReset", true);
 

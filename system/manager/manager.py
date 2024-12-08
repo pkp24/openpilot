@@ -79,6 +79,7 @@ def manager_init() -> None:
     if params.get(k) is None or reset_toggles:
       if params_storage.get(k) is None or reset_toggles:
         params.put(k, v)
+        params_storage.remove(k)
       else:
         params.put(k, params_storage.get(k))
     else:

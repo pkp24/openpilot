@@ -90,7 +90,7 @@ FrogPilotDataPanel::FrogPilotDataPanel(FrogPilotSettingsWindow *parent) : FrogPi
     } else if (id == 2) {
       QString selection = MultiOptionDialog::getSelection(tr("Select a recording to rename"), recordingsNames, "", this);
       if (!selection.isEmpty()) {
-        QString newName = InputDialog::getText(tr("Enter a new name"), this, tr("Rename Recording"));
+        QString newName = InputDialog::getText(tr("Enter a new name"), this, tr("Rename Recording")).trimmed().replace(" ", "_");
         if (!newName.isEmpty()) {
           if (recordingsNames.contains(newName)) {
             ConfirmationDialog::alert(tr("A recording with this name already exists. Please choose a different name."), this);
@@ -132,7 +132,7 @@ FrogPilotDataPanel::FrogPilotDataPanel(FrogPilotSettingsWindow *parent) : FrogPi
     QStringList backupNames = backupDir.entryList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot, QDir::Name).filter(QRegularExpression("^(?!.*_in_progress$).*$"));
 
     if (id == 0) {
-      QString nameSelection = InputDialog::getText(tr("Name your backup"), this, "", false, 1);
+      QString nameSelection = InputDialog::getText(tr("Name your backup"), this, "", false, 1).trimmed().replace(" ", "_");
       if (!nameSelection.isEmpty()) {
         if (backupNames.contains(nameSelection)) {
           ConfirmationDialog::alert(tr("A backup with this name already exists. Please choose a different name."), this);
@@ -297,7 +297,7 @@ FrogPilotDataPanel::FrogPilotDataPanel(FrogPilotSettingsWindow *parent) : FrogPi
     QStringList backupNames = backupDir.entryList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot, QDir::Name).filter(QRegularExpression("^(?!.*_in_progress$).*$"));
 
     if (id == 0) {
-      QString nameSelection = InputDialog::getText(tr("Name your backup"), this, "", false, 1);
+      QString nameSelection = InputDialog::getText(tr("Name your backup"), this, "", false, 1).trimmed().replace(" ", "_");
       if (!nameSelection.isEmpty()) {
         if (backupNames.contains(nameSelection)) {
           ConfirmationDialog::alert(tr("A backup with this name already exists. Please choose a different name."), this);
