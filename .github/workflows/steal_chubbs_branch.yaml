@@ -1,0 +1,35 @@
+name: Create Branch from Upstream
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your repo
+        uses: actions/checkout@v3
+        with:
+          ref: FrogPilot  # Change this if your main branch name is different
+
+      - name: Set up git config
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Add upstream repository
+        run: |
+          git remote add upstream https://github.com/Discountchubbs/FrogPilot.git
+          git fetch upstream FrogPilot-HKG-Testing
+
+      - name: Create new branch from upstream
+        run: |
+          # Change 'your-new-branch' to the name of the new branch you want to create
+          git checkout -b FP-Staging-Chubbs upstream/FrogPilot-HKG-Testing
+
+      - name: Push new branch
+        run: |
+          git push origin FP-Staging-Chubbs
