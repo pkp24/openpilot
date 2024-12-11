@@ -1,4 +1,4 @@
-name: Create Branch from Upstream
+name: Steal Chubbs branch
 
 on:
   workflow_dispatch:
