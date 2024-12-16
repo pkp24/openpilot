@@ -102,9 +102,9 @@ class HyundaiFlags(IntFlag):
 
 
 class HyundaiFlagsFP(IntFlag):
-  FP_CAMERA_SCC_LEAD = 2 ** 6
-  FP_LKAS12 = 2 ** 7
-  FP_RADAR_TRACKS = 2 ** 8
+  FP_CAMERA_SCC_LEAD = 2 ** 2
+  FP_LKAS12 = 2 ** 3
+  FP_RADAR_TRACKS = 2 ** 4
 
 
 class Footnote(Enum):
@@ -361,6 +361,11 @@ class CAR(Platforms):
     [HyundaiCarDocs("Kia K5 2021-24", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     CarSpecs(mass=3381 * CV.LB_TO_KG, wheelbase=2.85, steerRatio=13.27, tireStiffnessFactor=0.5),  # 2021 Kia K5 Steering Ratio (all trims)
     flags=HyundaiFlags.CHECKSUM_CRC8,
+  )
+  KIA_K5_2025 = HyundaiCanFDPlatformConfig(
+    [HyundaiCarDocs("Kia K5 2025", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_m]))],
+    # https://www.kiamedia.com/us/en/models/k5/2025/specifications
+    CarSpecs(mass=3230 * CV.LB_TO_KG, wheelbase=2.85, steerRatio=13.27),
   )
   KIA_K5_HEV_2020 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Kia K5 Hybrid 2020-22", car_parts=CarParts.common([CarHarness.hyundai_a]))],
@@ -723,7 +728,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.adas, 0x730, None),              # ADAS Driving ECU on HDA2 platforms
     (Ecu.parkingAdas, 0x7b1, None),       # ADAS Parking ECU (may exist on all platforms)
     (Ecu.hvac, 0x7b3, None),              # HVAC Control Assembly
-    (Ecu.cornerRadar, 0x7b7, None),
+    (Ecu.cornerRadar, 0x7b7, None),       # Corner radar
     (Ecu.combinationMeter, 0x7c6, None),  # CAN FD Instrument cluster
   ],
   # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
