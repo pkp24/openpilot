@@ -52,24 +52,20 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def get_accel_from_plan(CP, speeds, accels):
+def get_accel_from_plan(speeds, accels, action_t=DT_MDL, vEgoStopping=0.05):
   if len(speeds) == CONTROL_N:
-    v_target_now = interp(DT_MDL, CONTROL_N_T_IDX, speeds)
-    a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, accels)
+    v_now = speeds[0]
+    a_now = accels[0]
 
-    v_target = interp(CP.longitudinalActuatorDelay + DT_MDL, CONTROL_N_T_IDX, speeds)
-    if v_target != v_target_now:
-      a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
-    else:
-      a_target = a_target_now
-
-    v_target_1sec = interp(CP.longitudinalActuatorDelay + DT_MDL + 1.0, CONTROL_N_T_IDX, speeds)
+    v_target = interp(action_t, CONTROL_N_T_IDX, speeds)
+    a_target = 2 * (v_target - v_now) / (action_t) - a_now
+    v_target_1sec = interp(action_t + 1.0, CONTROL_N_T_IDX, speeds)
   else:
     v_target = 0.0
     v_target_1sec = 0.0
     a_target = 0.0
-  should_stop = (v_target < CP.vEgoStopping and
-                 v_target_1sec < CP.vEgoStopping)
+  should_stop = (v_target < vEgoStopping and
+                 v_target_1sec < vEgoStopping)
   return a_target, should_stop
 
 
@@ -212,9 +208,11 @@ class LongitudinalPlanner:
 
     accel_limits = [sm['frogpilotPlan'].minAcceleration, sm['frogpilotPlan'].maxAcceleration]
     if self.mpc.mode == 'acc':
+      accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
       accel_limits_turns = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_limits, self.CP)
     else:
+      accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
 
     if reset_state:
@@ -259,11 +257,11 @@ class LongitudinalPlanner:
     self.mpc.set_weights(sm['frogpilotPlan'].accelerationJerk, sm['frogpilotPlan'].dangerJerk, sm['frogpilotPlan'].speedJerk, prev_accel_constraint, personality=sm['controlsState'].personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(self.lead_one, self.lead_two, sm['frogpilotPlan'].vCruise, x, v, a, j, radarless_model, sm['frogpilotPlan'].tFollow,
+    self.mpc.update(self.lead_one, self.lead_two,  sm['frogpilotPlan'].vCruise, x, v, a, j, radarless_model, sm['frogpilotPlan'].tFollow,
                     sm['frogpilotCarState'].trafficModeActive, personality=sm['controlsState'].personality)
 
-    self.a_desired_trajectory_full = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
+    self.a_desired_trajectory_full = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
     self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
     self.j_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC[:-1], self.mpc.j_solution)
 
@@ -295,7 +293,15 @@ class LongitudinalPlanner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
-    a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
+    action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
+    a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
+                                                action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+    if self.mpc.mode == 'blended':
+      a_target_e2e, should_stop_e2e = get_accel_from_plan(list(sm['modelV2'].velocity.x)[:CONTROL_N],
+                                                          list(sm['modelV2'].acceleration.x)[:CONTROL_N],
+                                                          action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+      a_target = min(a_target, a_target_e2e)
+      should_stop = should_stop or should_stop_e2e
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True

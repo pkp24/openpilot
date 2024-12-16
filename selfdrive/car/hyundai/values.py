@@ -100,6 +100,13 @@ class HyundaiFlags(IntFlag):
   LKAS12 = 2 ** 25
   NAV_MSG = 2 ** 26
 
+
+class HyundaiFlagsFP(IntFlag):
+  FP_CAMERA_SCC_LEAD = 2 ** 6
+  FP_LKAS12 = 2 ** 7
+  FP_RADAR_TRACKS = 2 ** 8
+
+
 class Footnote(Enum):
   CANFD = CarFootnote(
     "Requires a <a href=\"https://comma.ai/shop/can-fd-panda-kit\" target=\"_blank\">CAN FD panda kit</a> if not using " +
@@ -201,7 +208,7 @@ class CAR(Platforms):
   HYUNDAI_IONIQ_EV_LTD = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Ioniq Electric 2019", car_parts=CarParts.common([CarHarness.hyundai_c]))],
     CarSpecs(mass=1490, wheelbase=2.7, steerRatio=13.73, tireStiffnessFactor=0.385),
-    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV | HyundaiFlags.LEGACY | HyundaiFlags.MIN_STEER_32_MPH,
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.EV | HyundaiFlags.MIN_STEER_32_MPH,
   )
   HYUNDAI_IONIQ_EV_2020 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Ioniq Electric 2020", "All", car_parts=CarParts.common([CarHarness.hyundai_h]))],
