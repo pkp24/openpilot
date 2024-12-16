@@ -25,12 +25,12 @@ private:
 
   FrogPilotButtonsControl *curveDetectionBtn;
 
-  QJsonObject frogpilotToggleLevels;
+  QJsonObject frogpilot_toggle_levels;
 
   Params params;
-  Params params_default{"/data/params_default"};
 
   bool customPersonalityOpen;
+  bool disableOpenpilotLongitudinal;
   bool hasPCMCruise;
   bool hasDashSpeedLimits;
   bool isGM;

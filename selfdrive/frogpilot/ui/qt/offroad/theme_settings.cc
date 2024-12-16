@@ -146,6 +146,7 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
           if (!colorSchemeToSelect.isEmpty()) {
             params.put("CustomColors", formatColorNameForStorage(colorSchemeToSelect).toStdString());
             manageCustomColorsBtn->setValue(colorSchemeToSelect);
+            updateFrogPilotToggles();
           }
         }
       });
@@ -273,6 +274,7 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
           if (!iconPackToSelect.isEmpty()) {
             params.put("CustomDistanceIcons", formatIconNameForStorage(iconPackToSelect).toStdString());
             manageDistanceIconsBtn->setValue(iconPackToSelect);
+            updateFrogPilotToggles();
           }
         }
       });
@@ -401,6 +403,7 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
           if (!iconPackToSelect.isEmpty()) {
             params.put("CustomIcons", formatIconNameForStorage(iconPackToSelect).toStdString());
             manageCustomIconsBtn->setValue(iconPackToSelect);
+            updateFrogPilotToggles();
           }
         }
       });
@@ -529,6 +532,7 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
           if (!signalPackToSelect.isEmpty()) {
             params.put("CustomSignals", formatSignalNameForStorage(signalPackToSelect).toStdString());
             manageCustomSignalsBtn->setValue(signalPackToSelect);
+            updateFrogPilotToggles();
           }
         }
       });
@@ -657,6 +661,7 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
           if (!soundSchemeToSelect.isEmpty()) {
             params.put("CustomSounds", formatSoundNameForStorage(soundSchemeToSelect).toStdString());
             manageCustomSoundsBtn->setValue(soundSchemeToSelect);
+            updateFrogPilotToggles();
           }
         }
       });
@@ -785,6 +790,7 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
           if (!imageToSelect.isEmpty()) {
             params.put("WheelIcon", formatWheelNameForStorage(imageToSelect).toStdString());
             manageWheelIconsBtn->setValue(imageToSelect);
+            updateFrogPilotToggles();
           }
         }
       });
@@ -838,6 +844,8 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
           params.remove("StartupMessageTop");
           params.remove("StartupMessageBottom");
         }
+
+        updateFrogPilotToggles();
       });
       themeToggle = startupAlertButton;
 
@@ -847,6 +855,8 @@ FrogPilotThemesPanel::FrogPilotThemesPanel(FrogPilotSettingsWindow *parent) : Fr
 
     addItem(themeToggle);
     toggles[param] = themeToggle;
+
+    makeConnections(themeToggle);
 
     if (FrogPilotParamManageControl *frogPilotManageToggle = qobject_cast<FrogPilotParamManageControl*>(themeToggle)) {
       QObject::connect(frogPilotManageToggle, &FrogPilotParamManageControl::manageButtonClicked, this, &FrogPilotThemesPanel::openParentToggle);
@@ -869,7 +879,7 @@ void FrogPilotThemesPanel::showEvent(QShowEvent *event) {
   soundsDownloaded = params.get("DownloadableSounds").empty();
   wheelsDownloaded = params.get("DownloadableWheels").empty();
 
-  frogpilotToggleLevels = parent->frogpilotToggleLevels;
+  frogpilot_toggle_levels = parent->frogpilot_toggle_levels;
   tuningLevel = parent->tuningLevel;
 
   hideToggles();
@@ -949,7 +959,7 @@ void FrogPilotThemesPanel::showToggles(const std::set<QString> &keys) {
   setUpdatesEnabled(false);
 
   for (auto &[key, toggle] : toggles) {
-    toggle->setVisible(keys.find(key) != keys.end() && tuningLevel >= frogpilotToggleLevels[key].toDouble());
+    toggle->setVisible(keys.find(key) != keys.end() && tuningLevel >= frogpilot_toggle_levels[key].toDouble());
   }
 
   setUpdatesEnabled(true);
@@ -964,7 +974,7 @@ void FrogPilotThemesPanel::hideToggles() {
   for (auto &[key, toggle] : toggles) {
     bool subToggles = customThemeKeys.find(key) != customThemeKeys.end();
 
-    toggle->setVisible(!subToggles && tuningLevel >= frogpilotToggleLevels[key].toDouble());
+    toggle->setVisible(!subToggles && tuningLevel >= frogpilot_toggle_levels[key].toDouble());
   }
 
   setUpdatesEnabled(true);

@@ -1,6 +1,6 @@
 #include "selfdrive/frogpilot/ui/qt/offroad/model_settings.h"
 
-FrogPilotModelPanel::FrogPilotModelPanel(FrogPilotSettingsWindow *parent) : FrogPilotListWidget(parent), parent(parent) {
+FrogPilotModelPanel::FrogPilotModelPanel(FrogPilotSettingsWindow *parent) : FrogPilotListWidget(parent) {
   const std::vector<std::tuple<QString, QString, QString, QString>> modelToggles {
     {"AutomaticallyUpdateModels", tr("Automatically Update and Download Models"), tr("Automatically downloads new models and updates them if needed."), ""},
 
@@ -266,6 +266,8 @@ FrogPilotModelPanel::FrogPilotModelPanel(FrogPilotSettingsWindow *parent) : Frog
               Hardware::reboot();
             }
           }
+
+          updateFrogPilotToggles();
         }
       });
       selectModelBtn->setValue(QString::fromStdString(params.get("ModelName")));
@@ -277,6 +279,8 @@ FrogPilotModelPanel::FrogPilotModelPanel(FrogPilotSettingsWindow *parent) : Frog
 
     addItem(modelToggle);
     toggles[param] = modelToggle;
+
+    makeConnections(modelToggle);
 
     if (FrogPilotParamManageControl *frogPilotManageToggle = qobject_cast<FrogPilotParamManageControl*>(modelToggle)) {
       QObject::connect(frogPilotManageToggle, &FrogPilotParamManageControl::manageButtonClicked, this, &FrogPilotModelPanel::openParentToggle);
@@ -302,9 +306,6 @@ FrogPilotModelPanel::FrogPilotModelPanel(FrogPilotSettingsWindow *parent) : Frog
 }
 
 void FrogPilotModelPanel::showEvent(QShowEvent *event) {
-  frogpilotToggleLevels = parent->frogpilotToggleLevels;
-  tuningLevel = parent->tuningLevel;
-
   QString currentModel = QString::fromStdString(params.get("Model")) + ".thneed";
 
   availableModelNames = QString::fromStdString(params.get("AvailableModelsNames")).split(",");
@@ -317,8 +318,6 @@ void FrogPilotModelPanel::showEvent(QShowEvent *event) {
   QStringList modelFiles = modelDir.entryList({"*.thneed"}, QDir::Files);
   modelFiles.removeAll(currentModel);
   haveModelsDownloaded = modelFiles.size() > 1;
-
-  hideToggles();
 }
 
 void FrogPilotModelPanel::updateState(const UIState &s) {
@@ -413,7 +412,7 @@ void FrogPilotModelPanel::showToggles(const std::set<QString> &keys) {
   setUpdatesEnabled(false);
 
   for (auto &[key, toggle] : toggles) {
-    toggle->setVisible(keys.find(key) != keys.end() && tuningLevel >= frogpilotToggleLevels[key].toDouble());
+    toggle->setVisible(keys.find(key) != keys.end());
   }
 
   setUpdatesEnabled(true);
@@ -432,7 +431,7 @@ void FrogPilotModelPanel::hideToggles() {
   for (auto &[key, toggle] : toggles) {
     bool subToggles = modelRandomizerKeys.find(key) != modelRandomizerKeys.end();
 
-    toggle->setVisible(!subToggles && tuningLevel >= frogpilotToggleLevels[key].toDouble());
+    toggle->setVisible(!subToggles);
   }
 
   setUpdatesEnabled(true);

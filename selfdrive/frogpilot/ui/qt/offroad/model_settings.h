@@ -25,20 +25,18 @@ private:
   void updateModelLabels();
   void updateState(const UIState &s);
 
+  std::set<QString> modelRandomizerKeys = {"ManageBlacklistedModels", "ResetScores", "ReviewScores"};
+
   ButtonControl *deleteModelBtn;
   ButtonControl *downloadAllModelsBtn;
   ButtonControl *downloadModelBtn;
   ButtonControl *selectModelBtn;
-
-  FrogPilotSettingsWindow *parent;
 
   Params params;
   Params params_memory{"/dev/shm/params"};
   Params paramsStorage{"/persist/params"};
 
   QDir modelDir{"/data/models/"};
-
-  QJsonObject frogpilotToggleLevels;
 
   QList<LabelControl*> labelControls;
 
@@ -56,9 +54,5 @@ private:
   bool modelsDownloaded;
   bool started;
 
-  int tuningLevel;
-
   std::map<QString, AbstractControl*> toggles;
-
-  std::set<QString> modelRandomizerKeys = {"ManageBlacklistedModels", "ResetScores", "ReviewScores"};
 };

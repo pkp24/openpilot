@@ -319,9 +319,6 @@ static void update_state(UIState *s) {
     if (frogpilotPlan.getTogglesUpdated()) {
       scene.frogpilot_toggles = QJsonDocument::fromJson(QString::fromStdString(s->params_memory.get("FrogPilotToggles", true)).toUtf8()).object();
       ui_update_params(s);
-      if (frogpilotPlan.getThemeUpdated()) {
-        ui_update_theme(s);
-      }
     }
   }
   if (sm.updated("liveLocationKalman")) {
@@ -364,6 +361,8 @@ void ui_update_params(UIState *s) {
 }
 
 void ui_update_frogpilot_params(UIState *s) {
+  loadThemeColors("", true);
+
   UIScene &scene = s->scene;
 
   scene.acceleration_path = scene.frogpilot_toggles.value("acceleration_path").toBool();
@@ -400,7 +399,9 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.lateral_tuning_metrics = scene.has_auto_tune && scene.frogpilot_toggles.value("lateral_tuning_metrics").toBool();
   scene.lane_detection_width = scene.frogpilot_toggles.value("lane_detection_width").toDouble();
   scene.lane_line_width = scene.frogpilot_toggles.value("lane_line_width").toDouble();
+  scene.lane_lines_color = loadThemeColors("LaneLines");
   scene.lead_detection_probability = scene.frogpilot_toggles.value("lead_detection_probability").toDouble();
+  scene.lead_marker_color = loadThemeColors("LeadMarker");
   scene.lead_metrics = scene.frogpilot_toggles.value("lead_metrics").toBool();
   scene.map_style = scene.frogpilot_toggles.value("map_style").toDouble();
   scene.memory_metrics = scene.frogpilot_toggles.value("memory_metrics").toBool();
@@ -413,7 +414,9 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.no_uploads = scene.frogpilot_toggles.value("no_uploads").toBool();
   scene.numerical_temp = scene.frogpilot_toggles.value("numerical_temp").toBool();
   scene.onroad_distance_button = scene.frogpilot_toggles.value("onroad_distance_button").toBool();
+  scene.path_color = loadThemeColors("Path");
   scene.path_edge_width = scene.frogpilot_toggles.value("path_edge_width").toDouble();
+  scene.path_edges_color = loadThemeColors("PathEdge");
   scene.path_width = scene.frogpilot_toggles.value("path_width").toDouble();
   scene.pedals_on_ui = scene.frogpilot_toggles.value("pedals_on_ui").toBool();
   scene.radarless_model = scene.frogpilot_toggles.value("radarless_model").toBool();
@@ -437,9 +440,11 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.show_blind_spot = scene.frogpilot_toggles.value("blind_spot_metrics").toBool();
   scene.show_fps = scene.frogpilot_toggles.value("show_fps").toBool();
   scene.show_speed_limit_offset = scene.frogpilot_toggles.value("show_speed_limit_offset").toBool();
-  scene.show_speed_limits = scene.frogpilot_toggles.value("show_speed_limits").toBool();
   scene.show_stopping_point = scene.frogpilot_toggles.value("show_stopping_point").toBool();
   scene.show_stopping_point_metrics = scene.frogpilot_toggles.value("show_stopping_point_metrics").toBool();
+  scene.sidebar_color1 = loadThemeColors("Sidebar1");
+  scene.sidebar_color2 = loadThemeColors("Sidebar2");
+  scene.sidebar_color3 = loadThemeColors("Sidebar3");
   scene.sidebar_metrics = scene.frogpilot_toggles.value("sidebar_metrics").toBool();
   scene.signal_metrics = scene.frogpilot_toggles.value("signal_metrics").toBool();
   scene.speed_limit_controller = scene.frogpilot_toggles.value("speed_limit_controller").toBool();
@@ -454,33 +459,14 @@ void ui_update_frogpilot_params(UIState *s) {
   scene.tethering_config = scene.frogpilot_toggles.value("tethering_config").toDouble();
   scene.unlimited_road_ui_length = scene.frogpilot_toggles.value("unlimited_road_ui_length").toBool();
   scene.use_si_metrics = scene.frogpilot_toggles.value("use_si_metrics").toBool();
+  scene.use_stock_colors = (scene.frogpilot_toggles.value("color_scheme").toString() == "stock");
+  scene.use_stock_wheel = (scene.frogpilot_toggles.value("wheel_image").toString() == "stock");
   scene.use_wheel_speed = scene.frogpilot_toggles.value("use_wheel_speed").toBool();
   scene.vtsc_enabled = scene.frogpilot_toggles.value("vision_turn_controller").toBool();
 
   if (scene.tethering_config == 1) {
     s->wifi->setTetheringEnabled(true);
   }
-}
-
-void ui_update_theme(UIState *s) {
-  UIScene &scene = s->scene;
-
-  scene.use_stock_colors = scene.frogpilot_toggles.value("color_scheme").toString() == "stock" && scene.frogpilot_toggles.value("current_holiday_theme").toString() == "stock";
-  scene.use_stock_wheel = scene.frogpilot_toggles.value("wheel_image").toString() == "stock" && scene.frogpilot_toggles.value("current_holiday_theme").toString() == "stock";
-
-  if (!scene.use_stock_colors) {
-    scene.use_stock_colors |= !loadThemeColors("", true).isValid();
-
-    scene.lane_lines_color = loadThemeColors("LaneLines");
-    scene.lead_marker_color = loadThemeColors("LeadMarker");
-    scene.path_color = loadThemeColors("Path");
-    scene.path_edges_color = loadThemeColors("PathEdge");
-    scene.sidebar_color1 = loadThemeColors("Sidebar1");
-    scene.sidebar_color2 = loadThemeColors("Sidebar2");
-    scene.sidebar_color3 = loadThemeColors("Sidebar3");
-  }
-
-  emit s->themeUpdated();
 }
 
 void UIState::updateStatus() {
@@ -547,7 +533,6 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 
   scene.frogpilot_toggles = QJsonDocument::fromJson(QString::fromStdString(params_memory.get("FrogPilotToggles", true)).toUtf8()).object();
   ui_update_params(this);
-  ui_update_theme(this);
 }
 
 void UIState::update() {

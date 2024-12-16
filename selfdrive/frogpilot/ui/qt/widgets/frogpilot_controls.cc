@@ -14,25 +14,23 @@ QColor loadThemeColors(const QString &colorKey, bool clearCache) {
 
   if (clearCache) {
     cachedColorData = QJsonObject();
-    QFile file("../frogpilot/assets/active_theme/colors/colors.json");
-
-    static int check_count = 0;
-    while (!file.exists() && check_count < 100) {
-      check_count += 1;
-      util::sleep_for(100);
-    }
-
-    if (!file.open(QIODevice::ReadOnly)) {
-      return QColor();
-    }
-
-    QByteArray fileData = file.readAll();
-    QJsonDocument doc = QJsonDocument::fromJson(fileData);
-
-    cachedColorData = doc.object();
+    return QColor();
   }
 
   if (cachedColorData.isEmpty()) {
+    QFile file("../frogpilot/assets/active_theme/colors/colors.json");
+    if (file.exists() && file.open(QIODevice::ReadOnly)) {
+      QJsonParseError parseError;
+      QByteArray fileData = file.readAll();
+      QJsonDocument doc = QJsonDocument::fromJson(fileData, &parseError);
+
+      if (parseError.error == QJsonParseError::NoError && doc.isObject()) {
+        cachedColorData = doc.object();
+      }
+    }
+  }
+
+  if (!cachedColorData.contains(colorKey)) {
     return QColor();
   }
 
