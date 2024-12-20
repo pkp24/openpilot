@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write  # Ensure the token has write permissions to delete branches
 
 jobs:
-  create-branch:
+  manage-branch:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout your repo
@@ -25,9 +25,15 @@ jobs:
           git remote add upstream https://github.com/Discountchubbs/FrogPilot.git
           git fetch upstream FrogPilot-HKG
 
+      - name: Delete staging-chubbs branch
+        uses: peter-evans/delete-branch@v4
+        with:
+          branch: FP-Staging-Chubbs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create new branch from upstream
         run: |
-          # Change 'your-new-branch' to the name of the new branch you want to create
           git checkout -b FP-Staging-Chubbs upstream/FrogPilot-HKG
 
       - name: Push new branch
