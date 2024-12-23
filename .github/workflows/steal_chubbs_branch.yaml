@@ -25,16 +25,6 @@ jobs:
           git remote add upstream https://github.com/Discountchubbs/FrogPilot.git
           git fetch upstream FrogPilot-HKG
 
-      - name: Delete FP-Staging-Chubbs branch
-        uses: peter-evans/delete-branch@v4
-        with:
-          branch: FP-Staging-Chubbs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: List remote branches after deletion
-        run: git ls-remote --heads origin
-
       - name: Create new branch from upstream
         run: |
           git checkout -b FP-Staging-Chubbs upstream/FrogPilot-HKG
