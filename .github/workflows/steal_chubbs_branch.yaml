@@ -23,7 +23,7 @@ jobs:
       - name: Add upstream repository
         run: |
           git remote add upstream https://github.com/Discountchubbs/FrogPilot.git
-          git fetch upstream FrogPilot-HKG
+          git fetch upstream ChubbsPilot
 
       - name: Create new branch from upstream
         run: |
