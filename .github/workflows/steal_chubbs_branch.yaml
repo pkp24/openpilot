@@ -27,7 +27,7 @@ jobs:
 
       - name: Create new branch from upstream
         run: |
-          git checkout -b FP-Staging-Chubbs upstream/FrogPilot-HKG
+          git checkout -b FP-Staging-Chubbs upstream/ChubbsPilot
 
       - name: Push new branch
         run: |
